@@ -247,6 +247,10 @@ Same setup as above. The difference is that for this launch, you do it from insi
 
 Also same setup as above. Just remember to specify the launch url the same way, and include the clientId. When you launch, you will be able to choose a patient, and they will provide the username and password that you'll use for the Oauth login.
 
+## Mobile
+
+Unfortunately, neither Epic nor Cerner offer an option to use a mobile device (well, not a mobile app anyway, they only allow http or https redirects, which is now how mobile redirects work). The setup below should work in real life, however, you would just need your sysadmin to approve your redirects.
+
 ### Android Setup
 
 Setting up your app, because it has to go deeper in Android and iOS than most, is a pain. I'm using [oauth2_client](https://pub.dev/packages/oauth2_client).
