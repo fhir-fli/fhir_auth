@@ -134,7 +134,7 @@ mixin Api {
 
 ## Mobile Auth by Provider
 
-### Google's Healthcare API
+### Google's Healthcare API - Mobile
 
 I've included the ability to use Google sign-in, so if you'd like to connect to the Google Healthcare API. Follow [Part 1](https://www.fhirfli.dev/gcp-healthcare-api-part-1-creating-fhir-store) and [Part 2](https://www.fhirfli.dev/gcp-healthcare-api-part-2-attempting-authentication) for instructions for setting up your own GCP version (this may need to be updated).
 
@@ -150,90 +150,7 @@ To briefly setup your app (assuming you have your GCP setup completed).
 8. Web Client ID (from the above web app) and Web Client Secret (from the above web app)
 9. Alright, I can't tell if you need to include the ClientId or not for this. Sometimes it seems to work without it and sometimes it doesn't. You may need to try it both ways. Either way, you DO need to have registered the mobile client.
 
-### [Aidbox](https://docs.aidbox.app/)
-
-I've liked Aidbox for a while. They have some nice features setup, so it's definitely worth taking a look. For us though, one of the really nice aspects is a free cloud demo.
-
-1. Start by going to [https://aidbox.app/](https://aidbox.app/)
-2. Create a new box called whatever you want, select your FHIR Version and Zone
-3. Create your client
-
-  ```yaml
-  PUT /Client/shinynewapp?_pretty=true
-  content-type: text/yaml
-  accept: text/yaml
-
-  secret: verysecret
-  grant_types:
-    - code
-  auth:
-    authorization_code:
-      redirect_uri: com.myshiny.newapp://callback
-  first_party: true
-  ```
-
-4. Create User (can be found more [detail here](https://docs.aidbox.app/security-and-access-control-1/security/access-policy#access-policies-for-users))
-
-```yaml
-data:
-  name: Grey Faulkenberry
-  roles:
-    - Administrator
-    - Doctor
-email: user@mail.com
-password: password
-id: user1
-resourceType: User
-```
-
-5. Create AccessPolicy for user (for true production apps, you will need to consider how you actually want this to be done, what kind of access you need, etc. For now, we are giving [all the permissions for the User](https://docs.aidbox.app/security-and-access-control-1/security/access-policy#full-access-for-administrator-role))
-
-```yaml
-engine: json-schema
-schema:
-  required:
-    - client
-    - user
-    - request-method
-  properties:
-    user:
-      required:
-        - data
-      properties:
-        data:
-          required:
-            - roles
-          properties:
-            roles:
-              not:
-                items:
-                  not:
-                    enum:
-                      - Administrator
-              type: array
-    client:
-      required:
-        - id
-      properties:
-        id:
-          const: shinynewapp
-    request-method:
-      enum:
-        - get
-        - post
-        - put
-        - delete
-        - option
-        - patch
-        - head
-description: Full access for users with role Administrator from client shinynewapp
-id: policy-for-shinynewapp-users-role-administrator
-resourceType: AccessPolicy
-```
-
-6. The mobileauthdemo should now be ready to connect to Aidbox.
-
-### [Interopland](https://sandbox.interop.community/) and [MELD](https://meld.interop.community/)
+### [MELD](https://meld.interop.community/) - Mobile
 
 1. This is a relatively typical HAPI server
 2. After you have the server setup, select Apps, then create a new App.
@@ -242,22 +159,6 @@ resourceType: AccessPolicy
 5. App redirect (given above API): ```com.myshiny.newapp://callback```
 6. You'll need to choose your own scopes, I've gone with: ```launch patient/Patient.* openid profile offline_access user/Patient.*```
 7. You'll also need to add some users (Settings -> USERS)
-
-### Azure API for FHIR (needs to be updated) - ToDo
-
-```Dart
-  static const azureClientId = 'myAzureClientId';
-  static const azureTenantId = 'myAzureTenantId';
-  static const azureSecret = 'myAzureSecret';
-  static const azureUrl = 'https://myfhirserver.azurehealthcareapis.com';
-  static const azureAuthUrl =
-      'https://login.microsoftonline.com/$azureTenantId/oauth2/authorize?resource=$azureUrl';
-  static const azureTokenUrl =
-      'https://login.microsoftonline.com/$azureTenantId/oauth2/token';
-```
-
-Notice that capability statement will not give the proper endpoints, but it will not attach the url to the resource parameter for the authURl, this is important, and it won't work without it.
-This is my [Azure tutorial](https://www.fhirfli.dev/azure-fhir-setup), it's not as complete as the one above, but it should be a reasonable start.
 
 ## Web Auth by Provider
 
@@ -288,35 +189,15 @@ The other piece to note is that we need a redirect file in the web folder. I use
 </html>
 ```
 
-### Google's Healthcare API
+### Google's Healthcare API - Web
 
 1. Follow the instructions above to set everything up.
 2. Ensure you put the Authorized Origins and Redirect URIs in the webauthdemo Oauth2 client
 3. For our demo, since we're running it on a localhost (don't ever do this in real life, and ESPECIALLY never in production), our origin is ```http://localhost:8888``` and our redirect is ```http://localhost:8888/redirect.html```
 
-### [Aidbox](https://docs.aidbox.app/)
-
-1. Same setup as above actually, just remember to change your redirect.
-
-### [Interopland](https://sandbox.interop.community/) and [MELD](https://meld.interop.community/)
+### [MELD](https://meld.interop.community/) - Web
 
 1. Same setup as above, but remember that for this one you probably do want to make sure you have the correct launch url (although we're still launching externally) and the new redirect URL
-
-### Azure API for FHIR - ToDo
-
-```Dart
-  static const azureClientId = 'myAzureClientId';
-  static const azureTenantId = 'myAzureTenantId';
-  static const azureSecret = 'myAzureSecret';
-  static const azureUrl = 'https://myfhirserver.azurehealthcareapis.com';
-  static const azureAuthUrl =
-      'https://login.microsoftonline.com/$azureTenantId/oauth2/authorize?resource=$azureUrl';
-  static const azureTokenUrl =
-      'https://login.microsoftonline.com/$azureTenantId/oauth2/token';
-```
-
-Notice that capability statement will not give the proper endpoints, but it will not attach the url to the resource parameter for the authURl, this is important, and it won't work without it.
-This is my [Azure tutorial](https://www.fhirfli.dev/azure-fhir-setup), it's not as complete as the one above, but it should be a reasonable start.
 
 ## EHR Launch
 
@@ -329,10 +210,56 @@ functionality in terms of creating resources, but they do allow a number of them
 
   1. Patient reading own data from mobile app
   2. Patient reading own data from pwa
-  3. Patient reading own data from desktop app 
+  3. Patient reading own data from desktop app
   4. Clinician create andread patient data from mobile app
   5. Clinician create andread patient data from mobile app
   6. Clinician create andread patient data from mobile app
+
+## webauthdemo - details about the demos in the package
+
+### Hapi
+
+- open endpoint, easiest to use
+
+### Meld
+
+- Standard SMART on FHIR Launch
+- Do need a Meld account
+- This is considered an external launch
+
+### Google
+
+- Always seems to have issues, but uses standard google auth
+- There's a big thing in the Main README about how to set it up
+
+### Epic
+
+- Considered an external launch
+- Has two launches since the processes are different, one for Patient, one for Practitioner
+- More details on their [Sandbox Data Site](https://fhir.epic.com/Documentation?docId=testpatients)
+- Practitioner
+  - username: FHIR
+  - password: EpicFhir11!
+- Patient
+  - username: fhircamila
+  - password: epicepic1
+
+### Cerner
+
+- As far as I can tell, cerner only has test patients, not practitioner accounts
+  - username: nancysmart
+  - password: Cerner01
+
+## ehrlaunchdemo
+
+- In theory you shouldn't need to store any apis, because it captures them for you.
+- The launch url should be something like:
+  - ```https://url-to-your-application/?clientId=abcdef-ghijklm-nopqrst-uvwxyz&iss=https://url-to-the-server-that-is-being-launched&launch=ml925C```
+- Let's break it down
+  - ```https://url-to-your-application/``` The url where your application is located
+  - ```?clientId=abcdef-ghijklm-nopqrst-uvwxyz``` this is the clientId of your application, it DOES need to be registered at the server ahead of time
+  - ```iss=https://url-to-the-server-that-is-being-launched``` server url that you will be authenticating against AND in the demo cases the same one we call to request data.
+  - ```launch=ml925C``` unique launch code used for this particular session - it's added by the server, you don't specify it
 
 ## Suggestions and Complaints
 

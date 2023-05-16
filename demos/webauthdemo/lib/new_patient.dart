@@ -7,18 +7,18 @@ Patient newPatient() {
   final zNum = digits(4).toString();
   return Patient(
     identifier: [
-      Identifier(
-        type: CodeableConcept(
-          coding: [
-            Coding(
-              system: FhirUri('http://terminology.hl7.org/CodeSystem/v2-0203'),
-              code: Code('SS'),
-            ),
-          ],
-        ),
-        system: FhirUri('http://hl7.org/fhir/sid/us-ssn'),
-        value: digits(9).toString(),
-      ),
+      // Identifier(
+      //   type: CodeableConcept(
+      //     coding: [
+      //       Coding(
+      //         system: FhirUri('http://terminology.hl7.org/CodeSystem/v2-0203'),
+      //         code: FhirCode('SS'),
+      //       ),
+      //     ],
+      //   ),
+      //   system: FhirUri('http://hl7.org/fhir/sid/us-ssn'),
+      //   value: digits(9).toString(),
+      // ),
       Identifier.fromJson({
         "use": "usual",
         "type": {"text": "WPRINTERNAL"},
@@ -42,7 +42,7 @@ Patient newPatient() {
         },
       ),
     ],
-    active: Boolean(true),
+    active: FhirBoolean(true),
     name: [
       HumanName(
         family: lastNames[random(50)],
@@ -50,8 +50,8 @@ Patient newPatient() {
       ),
     ],
     address: [Address(postalCode: zipCode())],
-    gender: random(10) < 5 ? Code('male') : Code('female'),
-    birthDate: Date(
+    gender: random(10) < 5 ? FhirCode('male') : FhirCode('female'),
+    birthDate: FhirDate(
         '${1900 + random(120)}-0${random(8) + 1}-${(random(27) + 1).toString().padLeft(2, '0')}'),
   );
 }

@@ -12,6 +12,7 @@ final scopes = Scopes(
   ],
   openid: true,
   offlineAccess: true,
+  ehrLaunch: true,
 );
 
 final cernerPatientScopes = Scopes(

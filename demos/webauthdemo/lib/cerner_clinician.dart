@@ -35,7 +35,7 @@ Future<void> cernerClinicianRequest(Uri fhirCallback) async {
 
     final response = await request1.request();
     print('Response from upload:\n${response.toJson()}');
-    newId = response.id;
+    newId = response.fhirId;
 
     if (newId is! String) {
       if (response is OperationOutcome &&
@@ -45,7 +45,7 @@ Future<void> cernerClinicianRequest(Uri fhirCallback) async {
         print('OPERATION OUTCOME');
         final location = response.issue.first.location!.first;
         final resourceType =
-            ResourceUtils.resourceTypeFromStringMap[location.split('/').first];
+            resourceTypeFromStringMap[location.split('/').first];
         final newId = location.split('/').last;
         if (resourceType == null || newId == '') {
           print('Cannot attempt to read resource');
@@ -53,7 +53,7 @@ Future<void> cernerClinicianRequest(Uri fhirCallback) async {
           final request2 = FhirRequest.read(
             base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
             type: resourceType,
-            id: newId,
+            fhirId: newId,
             client: client,
           );
 
@@ -61,8 +61,8 @@ Future<void> cernerClinicianRequest(Uri fhirCallback) async {
           print('Response from read:\n${response.toJson()}');
         }
       } else if (response is OperationOutcome &&
-          (response.issue.first.code == Code('informational') ||
-              response.issue.first.severity == Code('information'))) {
+          (response.issue.first.code == FhirCode('informational') ||
+              response.issue.first.severity == FhirCode('information'))) {
         final code = newPatient.identifier?.first.value;
         final request2 = FhirRequest.search(
           base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
@@ -78,7 +78,7 @@ Future<void> cernerClinicianRequest(Uri fhirCallback) async {
       final request2 = FhirRequest.read(
         base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
         type: R4ResourceType.Patient,
-        id: newId,
+        fhirId: newId,
         client: client,
       );
 

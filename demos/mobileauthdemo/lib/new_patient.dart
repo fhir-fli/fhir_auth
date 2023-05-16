@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:fhir/r4.dart';
 
 Patient newPatient() => Patient(
-      active: Boolean(true),
+      active: FhirBoolean(true),
       name: [
         HumanName(
           family: lastNames[random(50)],
@@ -11,8 +11,8 @@ Patient newPatient() => Patient(
         ),
       ],
       address: [Address(postalCode: zipCode())],
-      gender: random(10) < 5 ? Code('male') : Code('female'),
-      birthDate: Date(
+      gender: random(10) < 5 ? FhirCode('male') : FhirCode('female'),
+      birthDate: FhirDate(
           '${1900 + random(120)}-0${random(8) + 1}-${(random(27) + 1).toString().padLeft(2, '0')}'),
     );
 

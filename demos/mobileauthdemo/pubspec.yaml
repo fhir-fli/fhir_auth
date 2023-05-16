@@ -6,11 +6,12 @@ environment:
   sdk: '>=2.19.0 <3.0.0'
 
 dependencies:
-  fhir: ^0.9.7
+  fhir: ^0.10.0
   # fhir:
   #   path: ../../../fhir
-  fhir_at_rest:
-    path: ../../../fhir_at_rest
+  fhir_at_rest: ^0.10.0
+  # fhir_at_rest:
+  #   path: ../../../fhir_at_rest
   fhir_auth:
     path: ../../../fhir_auth
   flutter:
@@ -18,7 +19,7 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   google_sign_in: ^6.1.0
-  http: ^0.13.5
+  http: ^0.13.6
   
 dev_dependencies:
   flutter_test:

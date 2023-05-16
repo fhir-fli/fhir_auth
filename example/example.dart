@@ -29,7 +29,7 @@ Future<void> main() async {
   try {
     await client.login();
     if (client.fhirUri.value != null) {
-      final newPatient = Patient(id: '12345');
+      final newPatient = Patient(fhirId: '12345');
       log('Patient to be uploaded:\n${newPatient.toJson()}');
       final request1 = FhirRequest.create(
         base: client.fhirUri.value!,
@@ -46,7 +46,7 @@ Future<void> main() async {
       } catch (e) {
         log(e.toString());
       }
-      if (newId is! Id) {
+      if (newId is! FhirId) {
         log(newId.toString());
       } else {
         final request2 = FhirRequest.read(

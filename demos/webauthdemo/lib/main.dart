@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'cerner_clinician.dart';
+// import 'cerner_clinician.dart';
 import 'cerner_patient.dart';
 import 'epic_clinician.dart';
 import 'epic_patient.dart';
@@ -115,27 +115,27 @@ class DemoPage extends StatelessWidget {
                   ),
                   onPressed: () async =>
                       await cernerPatientRequest(fhirCallback)),
-              ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(Colors.white),
-                    side: MaterialStateProperty.all(
-                        const BorderSide(color: Colors.black)),
-                  ),
-                  child: Column(
-                    children: [
-                      Image.asset('assets/cerner.png'),
-                      Text(
-                        'Clinician',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 24.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  onPressed: () async =>
-                      await cernerClinicianRequest(fhirCallback)),
+              // ElevatedButton(
+              //     style: ButtonStyle(
+              //       backgroundColor: MaterialStateProperty.all(Colors.white),
+              //       side: MaterialStateProperty.all(
+              //           const BorderSide(color: Colors.black)),
+              //     ),
+              //     child: Column(
+              //       children: [
+              //         Image.asset('assets/cerner.png'),
+              //         Text(
+              //           'Clinician',
+              //           style: TextStyle(
+              //             color: Colors.black,
+              //             fontSize: 24.0,
+              //             fontWeight: FontWeight.bold,
+              //           ),
+              //         ),
+              //       ],
+              //     ),
+              //     onPressed: () async =>
+              //         await cernerClinicianRequest(fhirCallback)),
             ],
           ),
         ),

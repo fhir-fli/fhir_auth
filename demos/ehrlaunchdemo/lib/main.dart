@@ -61,7 +61,7 @@ class DemoPage extends StatelessWidget {
                         'Last Name: ${(snapshot.data as Patient).name?[0].family}'),
                     Text(
                         'Given Names: ${(snapshot.data as Patient).name?[0].given?.join(" ")}'),
-                    Text('ID: ${(snapshot.data as Patient).id}'),
+                    Text('ID: ${(snapshot.data as Patient).fhirId}'),
                     Text('ISS: ${client?.fhirUri}'),
                   ];
                 } else {

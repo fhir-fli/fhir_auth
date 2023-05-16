@@ -1,16 +1,34 @@
 # webauthdemo
 
-A new Flutter project.
+## Hapi
 
-## Getting Started
+- open endpoint, easiest to use
 
-This project is a starting point for a Flutter application.
+## Meld
 
-A few resources to get you started if this is your first Flutter project:
+- Standard SMART on FHIR Launch
+- Do need a Meld account
+- This is considered an external launch
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+## Google
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Always seems to have issues, but uses standard google auth
+- There's a big thing in the Main README about how to set it up
+
+## Epic
+
+- Considered an external launch
+- Has two launches since the processes are different, one for Patient, one for Practitioner
+- More details on their [Sandbox Data Site](https://fhir.epic.com/Documentation?docId=testpatients)
+- Practitioner
+  - username: FHIR
+  - password: EpicFhir11!
+- Patient
+  - username: fhircamila
+  - password: epicepic1
+
+## Cerner
+
+- As far as I can tell, cerner only has test patients, not practitioner accounts
+  - username: nancysmart
+  - password: Cerner01

@@ -21,7 +21,7 @@ mixin Api {
   static const gcsUrl = 'https://healthcare.googleapis.com/v1/projects'
       '/demos-322021/locations/us-central1/datasets/mayjuun/fhirStores/dev/fhir';
   static const gcsClientId =
-      '691103016946-plc42eg1qr49ke0gbd1rsd650eo0el5p.apps.googleusercontent.com';
+      '691103016946-rj3hdtham6a9ial8ka3g6do9pj6k1o3l.apps.googleusercontent.com';
 
   /// HAPI
   static const hapiUrl = 'http://hapi.fhir.org/baseR4';

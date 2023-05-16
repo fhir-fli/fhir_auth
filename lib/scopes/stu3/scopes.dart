@@ -95,7 +95,7 @@ class Scopes with _$Scopes {
                 : 'system/';
         scopeArgument += scope.allTypes
             ? '*.'
-            : ResourceUtils.resourceTypeToStringMap[scope.resourceType] ?? '';
+            : resourceTypeToStringMap[scope.resourceType] ?? '';
         scopeArgument += scope.interaction == Interaction.any
             ? '.*'
             : '.${scope.interaction.toString().split(".").last}';

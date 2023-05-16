@@ -29,7 +29,7 @@ Future meldRequest() async {
     try {
       final response = await request1.request(headers: {});
       print('Response from upload:\n${response.toJson()}');
-      newId = response.id;
+      newId = response.fhirId;
     } catch (e) {
       print(e);
     }
@@ -39,7 +39,7 @@ Future meldRequest() async {
       final request2 = FhirRequest.read(
         base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
         type: R4ResourceType.Patient,
-        id: newId,
+        fhirId: newId,
         client: client,
       );
       try {

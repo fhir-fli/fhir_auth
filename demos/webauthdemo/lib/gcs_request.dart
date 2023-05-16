@@ -27,7 +27,7 @@ Future<void> gcsRequest(Uri fhirCallback) async {
     String? newId;
     try {
       final response = await request1.request();
-      newId = response.id;
+      newId = response.fhirId;
       print('Response from upload: ${response.toJson()}');
     } catch (e) {
       print(e);
@@ -39,7 +39,7 @@ Future<void> gcsRequest(Uri fhirCallback) async {
       final request2 = FhirRequest.read(
         base: client.fhirUri.value!,
         type: R4ResourceType.Patient,
-        id: newId,
+        fhirId: newId,
         client: client,
       );
       try {
