@@ -2,17 +2,15 @@
 
 This package is supposed to allow easier authentication for FHIR applications (mostly using SMART on FHIR although there's also support of Google, maybe eventually Amplify and Azure, but don't hold your breath). I will say, this continues to be the most frustrating package to try and develop/support. I continue to feel as though, even though each server that I work with *SAYS* that they support SMART on FHIR, I still always struggle and fight with the process.
 
-FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of this product by HL7.
-
 ## Current examples in demo
 
 || Provider || Patient ||
 |:-:|:-:|:-:|:-:|:-:|
 ||Standalone|Portal|Standalone|Portal||
-|MELD|Web||Web||
+|MELD|Web|Web|Web|Web|
 |Google||NA||NA|
-|Epic|Web||Web||
-|Cerner|NA|NA|Web||
+|Epic|Web|Web|Web|Web|
+|Cerner|NA|NA|Web|Web|
 
 ## Full SMART on FHIR
 
@@ -184,32 +182,74 @@ In case anyone is interested, here is the manifest:
 4. Specify your redirect URL
 5. Select Standard capabilities (I check all of them, but obviously select the ones you need)
 6. Product APIs - select the resources you need your app to have use of
-7. Cerner has its own annoying aspects. For instance, you can't request a * interaction, you have to request both read and write access as separate scopes
+7. Cerner has its own annoying aspects. For instance, you can't request a ```*``` interaction, you have to request both read and write access as separate scopes
 8. Then the credentials I've been using to test with in their sandbox
   - username: nancysmart
   - password: Cerner01
 
 ### Google's Healthcare API
 
-I've included the ability to use Google sign-in, so if you'd like to connect to the Google Healthcare API. Follow [Part 1](https://www.fhirfli.dev/gcp-healthcare-api-part-1-creating-fhir-store) and [Part 2](https://www.fhirfli.dev/gcp-healthcare-api-part-2-attempting-authentication) for instructions for setting up your own GCP version (although it's a bit dated now, most of it is still accurate).
-
-To briefly setup your app (assuming you have your GCP setup completed).
+I don't know why Google always seems to be such a pain in the ass to implement. I wrote some older posts ([part 1](https://mayjuun.com/fhirfli/2-gcp-fhir-flutter-1/), and [part 2](https://mayjuun.com/fhirfli/3-gcp-fhir-flutter-2-/)) about seting up your GCP instance for this. They're a little dated but most of it is still accurate.
   
 1. Go through the APIs & Services -> OAuth consent screen (fill in everything, including support email, and your authorized domains as your GCP domain)
-2. Your sensitive scopes - Cloud Healthcare API
-3. APIs & Services -> Credentials -> Create OAuth client ID
-4. Package name should be (assuming API file above): ```com.myshiny.newapp```
-5. You do need the SHA-1 certificate for this (ALWAYS remember to update this, I always forget and then spend at least an hour cursing at myself for why it's not working when I didn't change anything - and I forgot I changed computers, or reformatted, or something, and now my SHA-1 certificate is different)
-6. From the same menu, Create an OAuth client ID but select web application
-7. Identity Platform -> Add a Provider -> Select Google
-8. Web Client ID (from the above web app) and Web Client Secret (from the above web app)
-9. Alright, I can't tell if you need to include the ClientId or not for this. Sometimes it seems to work without it and sometimes it doesn't. You may need to try it both ways. Either way, you DO need to have registered the mobile client.
+2. Your sensitive scopes - ```https://www.googleapis.com/auth/cloud-healthcare```
+3. Non-sensitive scopes - ```https://www.googleapis.com/auth/userinfo.profile```
+4. APIs & Services -> Credentials -> Create OAuth client ID
+5. Application type - Web Application
+6. Name - whatever you'd like
+7. Authorized JavaScript origins - where your website lives
+8. Authorized redirect URIs - usually the same, just remember the ```redirect.html``` at the end
+9. Identity Platform -> Add a Provider -> Select Google
+10. Web Client ID (from the above web app) and Web Client Secret (from the above web app)
+11. Lastly, in Healthcare -> Dataset -> Datastore, you need to add Principal, copy and paste the OAuth ClientId, and give it Healthcare FHIR Resource Editor Permissions.
 
+### EHR Launch
+
+For an EHR launch it's generally easiest (and flexible) to pass in a bunch of url parameters with your launch. In the demo, it assumes you're going to pass in the iss (base FHIR server url), the clientId, a launch code. It also assumes that the redirect url is the base url + ```redirect.html```. That's important because you'll need to register it ahead of time with the Server.
+
+- The launch url should be something like:
+  - ```https://url-to-your-application/?clientId=abcdef-ghijklm-nopqrst-uvwxyz&iss=https://url-to-the-server-that-is-being-launched&launch=ml925C```
+- Let's break it down
+  - ```https://url-to-your-application/``` The url where your application is located
+  - ```?clientId=abcdef-ghijklm-nopqrst-uvwxyz``` this is the clientId of your application, it DOES need to be registered at the server ahead of time
+  - ```iss=https://url-to-the-server-that-is-being-launched``` server url that you will be authenticating against AND in the demo cases the same one we call to request data (usually added by the server)
+  - ```launch=ml925C``` unique launch code used for this particular session - it's added by the server, you don't specify it
+
+For this one, you will again run the ```run_locally.sh``` script. You can then go to the sandbox and launch the application.
+
+#### Meld
+
+Similar setup for this one. There are a few more scopes, but otherwise it looks very similar. But notice the launch url contains the clientId.
+
+```json
+{
+  "software_id":null,
+  "client_name":"ehrlaunchdemo",
+  "client_uri":null,
+  "logo_uri":null,
+  "launch_url":"https://my-launch-url/?clientId=3d5997bc-1da8-4aed-b779-685d82c9293d",
+  "redirect_uris":["https://my-launch-url/redirect.html"],
+  "scope":"launch patient/Patient.* launch/patient openid profile offline_access",
+  "token_endpoint_auth_method":"NONE",
+  "fhirVersions":null,
+  "briefDescription":"ehrlaunchdemo",
+  "samplePatients":""
+  }
+```
+
+Also in Meld, it lets you select a Persona during the launch. You may select either a practitioner or a patient, and then use their credentials for the OAuth authentication process. You do need to be careful of which scopes you request however. Because of how I've setup the demo, it's not exactly as you'd set it up in production, but it will work with both a Provider and a Patient login.
+
+#### Epic
+
+Same setup as above. The difference is that for this launch, you do it from inside their sandbox. To do that, you go to the [Launch Page](https://fhir.epic.com/Documentation?docId=launching). Click the button that says ```Try it```. Choose the app you want to launch, choose a MyChart user, and then enter the launch URL of your app. Remember, this should be the base url where your app lives, and add ```clientId=my-client-id``` to the end. The demo just pulls the data about whoever launches it, but it shows you can launch as either a Practitioner or a Patient.
+
+#### Cerner
+
+Also same setup as above. Just remember to specify the launch url the same way, and include the clientId. When you launch, you will be able to choose a patient, and they will provide the username and password that you'll use for the Oauth login.
 
 ### Android Setup
-Setting up your app, because it has to go deeper in Android and iOS than most, is a pain. I'm using [oauth2_client](https://pub.dev/packages/oauth2_client). 
 
-
+Setting up your app, because it has to go deeper in Android and iOS than most, is a pain. I'm using [oauth2_client](https://pub.dev/packages/oauth2_client).
 
 In your file ```android/app/build.gradle``` you should have a section entitled ```defaultConfig```, you need to change it so that it looks similar to the following (please not the update, that for manifestPlaceholders it's now advised that you do += instead of simply = ):
 
@@ -254,23 +294,6 @@ You must set the platform in ios/Podfile
 platform :ios, '11.0'
 ```
 
-## Basic Example Setup
-
-
-### Workflow
-
-
-
-## Api.dart
-
-In my examples, I'm using an API file for all of the credentials. In order to keep private things private, I haven't uploaded my API.dart file for public consumption. However, it looks something like the following for those playing along at home:
-
-
-
-## Mobile Auth by Provider
-
-
-
 ### [MELD](https://meld.interop.community/) - Mobile
 
 1. This is a relatively typical HAPI server
@@ -281,62 +304,6 @@ In my examples, I'm using an API file for all of the credentials. In order to ke
 6. You'll need to choose your own scopes, I've gone with: ```launch patient/Patient.* openid profile offline_access user/Patient.*```
 7. You'll also need to add some users (Settings -> USERS)
 
-## Web Auth by Provider
-
-### Redirect
-
-
-
-
-
-### Google's Healthcare API - Web
-
-1. Follow the instructions above to set everything up.
-2. Ensure you put the Authorized Origins and Redirect URIs in the webauthdemo Oauth2 client
-3. For our demo, since we're running it on a localhost (don't ever do this in real life, and ESPECIALLY never in production), our origin is ```http://localhost:8888``` and our redirect is ```http://localhost:8888/redirect.html```
-
-### [MELD](https://meld.interop.community/) - Web
-
-1. Same setup as above, but remember that for this one you probably do want to make sure you have the correct launch url (although we're still launching externally) and the new redirect URL
-
-## EHR Launch
-
-While I can't say I've done much with this, I wanted to ensure we have the capability. Luckily, it's actually SUPER easy to accomplish if you already have a Web App that works. You'll need to setup your web client just like it says above, but this time make sure you really take note of the launch URI (and obviously the redirect URI). Take a look at the ehrlaunchdemo if you get confused. One of the things I changed recently is I removed the need to include the ClientID as part of the code itself (it's not a secret, but one less thing to hard code). It now passes in the iss and the clientId as part of the launchUrl, which also makes it more flexible. In the launch url, you'll need to specify it to include the ClientId, it will automatically include the iss, and the launch token. You'll need to pass this to the Smart client you create. The client will check if there's a launch token. If there is, it will include launch as a scope, and the token as a parameter. And that's it!
-
-## Epic Integration
-
-That's not actually the way to spell it, but I'm worried they'll break my thumbs if I write it out the whole way. For this, we have authenticated against their online sandbox. They don't allow full FHIR
-functionality in terms of creating resources, but they do allow a number of them to be read. So for this, in the demos section you will now find all of the following:
-
-  1. Patient reading own data from mobile app
-  2. Patient reading own data from pwa
-  3. Patient reading own data from desktop app
-  4. Clinician create andread patient data from mobile app
-  5. Clinician create andread patient data from mobile app
-  6. Clinician create andread patient data from mobile app
-
-## webauthdemo - details about the demos in the package
-
-### Hapi
-
-- open endpoint, easiest to use
-
-### Meld
-
-- Standard SMART on FHIR Launch
-- Do need a Meld account
-- This is considered an external launch
-
-### Google
-
-- Always seems to have issues, but uses standard google auth
-- There's a big thing in the Main README about how to set it up
-
-### Epic
-
-- Considered an external launch
-- Has two launches since the processes are different, one for Patient, one for Practitioner
-- More details on their [Sandbox Data Site](https://fhir.epic.com/Documentation?docId=testpatients)
 - Practitioner
   - username: FHIR
   - password: EpicFhir11!
@@ -344,22 +311,9 @@ functionality in terms of creating resources, but they do allow a number of them
   - username: fhircamila
   - password: epicepic1
 
-### Cerner
-
 - As far as I can tell, cerner only has test patients, not practitioner accounts
   - username: nancysmart
   - password: Cerner01
-
-## ehrlaunchdemo
-
-- In theory you shouldn't need to store any apis, because it captures them for you.
-- The launch url should be something like:
-  - ```https://url-to-your-application/?clientId=abcdef-ghijklm-nopqrst-uvwxyz&iss=https://url-to-the-server-that-is-being-launched&launch=ml925C```
-- Let's break it down
-  - ```https://url-to-your-application/``` The url where your application is located
-  - ```?clientId=abcdef-ghijklm-nopqrst-uvwxyz``` this is the clientId of your application, it DOES need to be registered at the server ahead of time
-  - ```iss=https://url-to-the-server-that-is-being-launched``` server url that you will be authenticating against AND in the demo cases the same one we call to request data.
-  - ```launch=ml925C``` unique launch code used for this particular session - it's added by the server, you don't specify it
 
 ## Suggestions and Complaints
 

@@ -4,11 +4,10 @@ import 'package:fhir_auth/r4.dart';
 
 Future<Resource?> request(SmartFhirClient client,
     [bool isPatient = true]) async {
-  print(client.fhirUri);
   await client.login();
 
   if (client.fhirUri.value != null) {
-    if (isPatient) {
+    if (isPatient && client.patientId != null) {
       print('Patient launch context Id: ${client.patientId}');
       if (client.patientId != null) {
         final request2 = FhirRequest.read(

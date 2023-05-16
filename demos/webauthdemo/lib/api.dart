@@ -23,8 +23,9 @@ mixin Api {
   static const cernerClinicianClientId = 'da0d3bcf-146f-4a24-9ccd-c71aa0e62814';
 
   /// GCS
-  static const gcsUrl = 'https://healthcare.googleapis.com/v1/projects'
-      '/demos-322021/locations/us-central1/datasets/mayjuun/fhirStores/dev/fhir';
+  static const gcsUrl = 'https://healthcare.googleapis.com/v1/'
+      'projects/fhirlite/locations/us-central1/datasets/fhirlite/fhirStores/fhirlite'
+      '/fhir';
   static const gcsClientId =
-      '691103016946-rj3hdtham6a9ial8ka3g6do9pj6k1o3l.apps.googleusercontent.com';
+      '672214177252-iurqu53g3oni8huv290gt5hhdvr353mm.apps.googleusercontent.com';
 }

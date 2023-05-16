@@ -6,7 +6,7 @@ import 'package:fhir_auth/r4.dart';
 import 'api.dart';
 import 'new_patient.dart';
 
-Future<void> gcsRequest(Uri fhirCallback) async {
+Future<void> gcsRequest([Uri? fhirCallback]) async {
   final client = GcpFhirClient(
     redirectUri: FhirUri(fhirCallback),
     fhirUri: FhirUri(Api.gcsUrl),
