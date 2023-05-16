@@ -60,14 +60,6 @@ class DemoPage extends StatelessWidget {
                     side: MaterialStateProperty.all(
                         const BorderSide(color: Colors.black)),
                   ),
-                  child: Image.asset('assets/gcp.png'),
-                  onPressed: () async => await gcsRequest(fhirCallback)),
-              ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(Colors.white),
-                    side: MaterialStateProperty.all(
-                        const BorderSide(color: Colors.black)),
-                  ),
                   child: Text(
                     'Epic Patient',
                     style: TextStyle(
@@ -115,27 +107,14 @@ class DemoPage extends StatelessWidget {
                   ),
                   onPressed: () async =>
                       await cernerPatientRequest(fhirCallback)),
-              // ElevatedButton(
-              //     style: ButtonStyle(
-              //       backgroundColor: MaterialStateProperty.all(Colors.white),
-              //       side: MaterialStateProperty.all(
-              //           const BorderSide(color: Colors.black)),
-              //     ),
-              //     child: Column(
-              //       children: [
-              //         Image.asset('assets/cerner.png'),
-              //         Text(
-              //           'Clinician',
-              //           style: TextStyle(
-              //             color: Colors.black,
-              //             fontSize: 24.0,
-              //             fontWeight: FontWeight.bold,
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //     onPressed: () async =>
-              //         await cernerClinicianRequest(fhirCallback)),
+              ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.white),
+                    side: MaterialStateProperty.all(
+                        const BorderSide(color: Colors.black)),
+                  ),
+                  child: Image.asset('assets/gcp.png'),
+                  onPressed: () async => await gcsRequest(fhirCallback)),
             ],
           ),
         ),

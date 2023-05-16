@@ -1,20 +1,215 @@
 # fhir_auth
 
-This package is supposed to allow easier authentication for FHIR applications (mostly using SMART on FHIR, although there's also support for general oauth2 and Google authentication). I will say, this continues to be the most frustrating package to try and develop/support. I continue to feel as though, even though each server that I work with *SAYS* that they support SMART on FHIR, and yet I still always struggle and fight with the process. Currently I'm successfully able to authenticate against GCP, Aidbox, Interopland, and MELD, and hopefully Azure soon. I still haven't gotten to AWS. These all work for both mobile and web. If anyone has practice authenticating against any other servers, please let me know!
+This package is supposed to allow easier authentication for FHIR applications (mostly using SMART on FHIR although there's also support of Google, maybe eventually Amplify and Azure, but don't hold your breath). I will say, this continues to be the most frustrating package to try and develop/support. I continue to feel as though, even though each server that I work with *SAYS* that they support SMART on FHIR, I still always struggle and fight with the process.
 
 FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of this product by HL7.
 
+## Current examples in demo
+
+|| Provider || Patient ||
+|:-:|:-:|:-:|:-:|:-:|
+||Standalone|Portal|Standalone|Portal||
+|MELD|Web||Web||
+|Google||NA||NA|
+|Epic|Web||Web||
+|Cerner|NA|NA|Web||
+
 ## Full SMART on FHIR
 
-All SMART on FHIR capabilities defined, all scopes allowed, all FHIR versions (Dstu2, Stu3, R4 and preview R5 #3) defined. Currently it only allows external to EHR launches, but soon should also support EHR launches.
+All SMART on FHIR capabilities defined, all scopes allowed, all FHIR versions (Dstu2, Stu3, R4b, and R5) defined. Allows external standalone launches and internal portal launches. Supports both old scope scheme (read/write/*) and new scope scheme (c/r/u/d/s)
+
+## Typical Flow
+
+### SmartClient
+
+```Dart
+  final client = SmartFhirClient(
+    fhirUri: FhirUri(url),
+    clientId: clientId,
+    redirectUri: fhirCallback,
+    scopes: Scopes(
+      clinicalScopes: [
+        ClinicalScope(
+          role: Role.patient,
+          resourceType: R4ResourceType.Patient,
+          interaction: Interaction.read,
+        ),
+      ],
+    ).scopesList(),
+    openid: true,
+    offlineAccess: true
+);
+```
+
+### Make Request
+
+```dart
+  await client.login();
+  final request1 = FhirRequest.create(
+    base: client.fhirUri!.value!,
+    resource: _newPatient,
+    fhirClient: client,
+  );
+  final response = await request1.request();
+```
+
+### Credentials
+
+Just to assist, when you look at the demos, they all refer to an api.dart file. My file looks something like this:
+
+```dart
+mixin Api {
+  /// redirect url for oauth2 authentication
+  static final fhirCallback = FhirUri('com.myshiny.newapp://callback');
+  /// because google apparently requires/prefers one slash at times
+  static final googleFhirCallback = FhirUri('com.myshiny.newapp:/callback');
+
+  /// Aidbox
+  static const aidboxUrl = 'https://demo.aidbox.app/fhir';
+  static const aidboxClientId = 'e67063f5-1234-8558-9fc4-137g1mnod93b';
+
+  /// GCS
+  static const gcsUrl = 'https://healthcare.googleapis.com/v1/projects/'
+      'brandnewdemo/locations/us-central1/'
+      'datasets/demo/fhirStores/demo/fhir';
+  static const gcsClientId =
+      '1234567890-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com';
+
+  /// HAPI Server
+  static const hapiUrl = 'https://hapi.fhir.org/baseR4';
+
+  /// Interop
+  static const interopClientId = 'e77063f5-1234-1234-9de4-137e1abcd83c';
+  static const interopUrl = 'https://api.interop.community/Demo/data';
+
+  /// MELD
+  static const meldClientId = 'e77063f5-1234-1234-9de4-137e1abcd83c';
+  static const meldUrl = 'https://meld.interop.community/Demo/data';
+}
+```
+
+So once it's setup, it works reasonable well, it's the setup that's terrible. I'm going to do my best to document it here, but as always, your setup may be different.
 
 ## Setup
 
-Setting up your app, because it has to go deeper in Android and iOS than most, is a pain. I'm using [oauth2_client](https://pub.dev/packages/oauth2_client). And accordingly, I have followed their recommendations for setup (note, these are not exactly the same as my previous setup).
+### Web
 
-I've included examples in mobileauthdemo as well as webauthdemo.
+#### Redirects
+
+One of the most important things to note about web/PWA is that you need to have a redirect in order to catch the token. This means you'll need to know where the redirect will be ahead of time. It's usually the same as your launch url, but with an extra pth or subdirectory.
+
+```sh
+https://my-shiny-new-app.com/redirect.html
+```
+
+This means that you need to have ```redirect.html``` file present. You can just copy this:
+
+```html
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Connexion Succeeded</title>
+    <meta name="description"
+        content="Simple, quick, standalone responsive placeholder without any additional resources">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+</body>
+<script>
+    window.opener.postMessage(window.location.href, '*');
+</script>
+
+</html>
+```
+
+And put it in the web folder of your flutter project. For test purposes (and only for test purposes), I've included a script you can use to test and ensure everything works, it runs on ```localhost:8888``` and so your redirect would be: ```http://localhost:8888/redirect.html```
+
+Details about all of this can be found in this article [in this article](https://itnext.io/flutter-web-oauth-authentication-through-external-window-d890a7ff6463)
+
+### MELD
+
+To setup for Meld, you obviously need a Meld account. You can [signup here](https://meld.interop.community/). For the demo example for meld, I setup an app called webauthdemo. It has a clientId, launch and redirect URIs, and then scopes. This particular app only requires:
+
+```sh
+launch patient/Patient.* openid offline_access profile
+```
+
+In case anyone is interested, here is the manifest:
+
+```json
+{
+  "software_id":null,
+  "client_name":"webauthdemo",
+  "client_uri":null,
+  "logo_uri":null,
+  "launch_url":"https://my-launch-url",
+  "redirect_uris":["https://my-launch-url/redirect.html"],
+  "scope":"launch patient/Patient.* openid offline_access profile",
+  "token_endpoint_auth_method":"NONE",
+  "fhirVersions":null,
+  "briefDescription":"webauthdemo",
+  "samplePatients":""
+}
+```
+
+### Epic
+
+1. You must register an account at [Epic's FHIR Sandbox](https://fhir.epic.com/).
+2. For web launch we need to create two applications, you can name them whatever you'd like.
+3. ClientID, for these demos we're going to use the ```Non-Production Client ID```.
+4. ```Application Audience``` one should be ```Patients``` and the other ```Clinicians or Administrative Users```
+5. Select FHIR resources and interactions that you want.
+6. Register the redirect URIs
+7. Select SMART on FHIR version (most will probably be R4, and remember Epic doesn't support R5 yet)
+8. Select Save & Ready for Sandbox
+9. The patient demo example pulls the patientId from the client to search
+10. The Provider creates a new patient
+11. Additional details on their [Sandbox Data Site](https://fhir.epic.com/Documentation?docId=testpatients)
+12. Of note, unsurprisingly, Epic makes it difficult, and requires strict-origin-when-cross-origin, meaning that while you can make a patient, you cannot then receive the new ID and find the patient that you just created
+  - Practitioner
+    - username: FHIR
+    - password: EpicFhir11!
+  - Patient
+    - username: fhircamila
+    - password: epicepic1
+
+### Cerner
+
+1. Must register for account at their [Code Console](https://code-console.cerner.com/) or [Cernercare](https://cernercare.com/)
+2. Create a new application, take note of the ClientID
+3. Select Patient type (I don't know any demo users for Cerner)
+4. Specify your redirect URL
+5. Select Standard capabilities (I check all of them, but obviously select the ones you need)
+6. Product APIs - select the resources you need your app to have use of
+7. Cerner has its own annoying aspects. For instance, you can't request a * interaction, you have to request both read and write access as separate scopes
+8. Then the credentials I've been using to test with in their sandbox
+  - username: nancysmart
+  - password: Cerner01
+
+### Google's Healthcare API
+
+I've included the ability to use Google sign-in, so if you'd like to connect to the Google Healthcare API. Follow [Part 1](https://www.fhirfli.dev/gcp-healthcare-api-part-1-creating-fhir-store) and [Part 2](https://www.fhirfli.dev/gcp-healthcare-api-part-2-attempting-authentication) for instructions for setting up your own GCP version (although it's a bit dated now, most of it is still accurate).
+
+To briefly setup your app (assuming you have your GCP setup completed).
+  
+1. Go through the APIs & Services -> OAuth consent screen (fill in everything, including support email, and your authorized domains as your GCP domain)
+2. Your sensitive scopes - Cloud Healthcare API
+3. APIs & Services -> Credentials -> Create OAuth client ID
+4. Package name should be (assuming API file above): ```com.myshiny.newapp```
+5. You do need the SHA-1 certificate for this (ALWAYS remember to update this, I always forget and then spend at least an hour cursing at myself for why it's not working when I didn't change anything - and I forgot I changed computers, or reformatted, or something, and now my SHA-1 certificate is different)
+6. From the same menu, Create an OAuth client ID but select web application
+7. Identity Platform -> Add a Provider -> Select Google
+8. Web Client ID (from the above web app) and Web Client Secret (from the above web app)
+9. Alright, I can't tell if you need to include the ClientId or not for this. Sometimes it seems to work without it and sometimes it doesn't. You may need to try it both ways. Either way, you DO need to have registered the mobile client.
+
 
 ### Android Setup
+Setting up your app, because it has to go deeper in Android and iOS than most, is a pain. I'm using [oauth2_client](https://pub.dev/packages/oauth2_client). 
+
+
 
 In your file ```android/app/build.gradle``` you should have a section entitled ```defaultConfig```, you need to change it so that it looks similar to the following (please not the update, that for manifestPlaceholders it's now advised that you do += instead of simply = ):
 
@@ -61,94 +256,20 @@ platform :ios, '11.0'
 
 ## Basic Example Setup
 
-### SmartClient
-
-```Dart
-  final client = SmartClient.getSmartClient(
-    fhirUrl: FhirUri(url),
-    clientId: clientId,
-    redirectUri: fhirCallback,
-    Scopes(
-      clinicalScopes: [
-        ClinicalScope(
-          Role.patient,
-          R4ResourceType.Patient,
-          Interaction.any,
-        ),
-      ],
-      openid: true,
-      offlineAccess: true,
-    ),
-    secret: secret, /// should not be used
-    authUrl: authUrl == null ? null : FhirUri(authUrl),
-    tokenUrl: tokenUrl == null ? null : FhirUri(tokenUrl),
-  );
-```
 
 ### Workflow
 
-```dart
-  await client.login();
-  final request1 = FhirRequest.create(
-    base: client.fhirUri!.value!,
-    resource: _newPatient,
-    fhirClient: client,
-  );
-  final response = await request1.request();
-```
+
 
 ## Api.dart
 
 In my examples, I'm using an API file for all of the credentials. In order to keep private things private, I haven't uploaded my API.dart file for public consumption. However, it looks something like the following for those playing along at home:
 
-```dart
-mixin Api {
-  /// redirect url for oauth2 authentication
-  static final fhirCallback = FhirUri('com.myshiny.newapp://callback');
-  /// because google apparently requires/prefers one slash at times
-  static final googleFhirCallback = FhirUri('com.myshiny.newapp:/callback');
 
-  /// Aidbox
-  static const aidboxUrl = 'https://demo.aidbox.app/fhir';
-  static const aidboxClientId = 'e67063f5-1234-8558-9fc4-137g1mnod93b';
-
-  /// GCS
-  static const gcsUrl = 'https://healthcare.googleapis.com/v1/projects/'
-      'brandnewdemo/locations/us-central1/'
-      'datasets/demo/fhirStores/demo/fhir';
-  static const gcsClientId =
-      '1234567890-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com';
-
-  /// HAPI Server
-  static const hapiUrl = 'https://hapi.fhir.org/baseR4';
-
-  /// Interop
-  static const interopClientId = 'e77063f5-1234-1234-9de4-137e1abcd83c';
-  static const interopUrl = 'https://api.interop.community/Demo/data';
-
-  /// MELD
-  static const meldClientId = 'e77063f5-1234-1234-9de4-137e1abcd83c';
-  static const meldUrl = 'https://meld.interop.community/Demo/data';
-}
-```
 
 ## Mobile Auth by Provider
 
-### Google's Healthcare API - Mobile
 
-I've included the ability to use Google sign-in, so if you'd like to connect to the Google Healthcare API. Follow [Part 1](https://www.fhirfli.dev/gcp-healthcare-api-part-1-creating-fhir-store) and [Part 2](https://www.fhirfli.dev/gcp-healthcare-api-part-2-attempting-authentication) for instructions for setting up your own GCP version (this may need to be updated).
-
-To briefly setup your app (assuming you have your GCP setup completed).
-  
-1. Go through the APIs & Services -> OAuth consent screen (fill in everything, including support email, and your authorized domains as your GCP domain)
-2. Your sensitive scopes - Cloud Healthcare API
-3. APIs & Services -> Credentials -> Create OAuth client ID
-4. Package name should be (assuming API file above): ```com.myshiny.newapp```
-5. You do need the SHA-1 certificate for this (ALWAYS remember to update this, I always forget and then spend at least an hour cursing at myself for why it's not working when I didn't change anything - and I forgot I changed computers, or reformatted, or something, and now my SHA-1 certificate is different)
-6. From the same menu, Create an OAuth client ID but select web application
-7. Identity Platform -> Add a Provider -> Select Google
-8. Web Client ID (from the above web app) and Web Client Secret (from the above web app)
-9. Alright, I can't tell if you need to include the ClientId or not for this. Sometimes it seems to work without it and sometimes it doesn't. You may need to try it both ways. Either way, you DO need to have registered the mobile client.
 
 ### [MELD](https://meld.interop.community/) - Mobile
 
@@ -164,30 +285,9 @@ To briefly setup your app (assuming you have your GCP setup completed).
 
 ### Redirect
 
-You'll most likely be distributing this as a PWA, so you should know what the redirect URL will be ahead of time. Just in case for test purposes, I've included a script you can use to make sure the it will run locally with the same port, and it will print out the redirect url that you can use. If you use this script, the redirect is: ```http://localhost:8888/redirect.html```
 
-The other piece to note is that we need a redirect file in the web folder. I use the one that was demonstrated [in this article](https://itnext.io/flutter-web-oauth-authentication-through-external-window-d890a7ff6463)
 
-```html
-<!doctype html>
-<html lang="en">
 
-<head>
-    <meta charset="utf-8">
-    <title>Connexion Succeeded</title>
-    <meta name="description"
-        content="Simple, quick, standalone responsive placeholder without any additional resources">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-
-<body>
-</body>
-<script>
-    window.opener.postMessage(window.location.href, '*');
-</script>
-
-</html>
-```
 
 ### Google's Healthcare API - Web
 

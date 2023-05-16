@@ -9,15 +9,17 @@ import 'scopes.dart';
 
 Future<void> cernerPatientRequest(Uri fhirCallback) async {
   final client = SmartFhirClient(
-    fhirUri: FhirUri(Api.cernerPatientUrl),
+    fhirUri: FhirUri(Api.cernerUrl),
     clientId: Api.cernerPatientClientId,
     redirectUri: FhirUri(fhirCallback),
-    scopes: cernerPatientScopes.scopesList(),
+    scopes: cernerScopes.scopesList(),
   );
 
   print('created client');
 
   await client.login();
+
+  print(client.patientId);
 
   if (client.fhirUri.value != null && client.patientId != null) {
     final request = FhirRequest.read(

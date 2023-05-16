@@ -12,7 +12,7 @@ Future<void> epicPatientRequest(Uri fhirCallback) async {
     fhirUri: FhirUri(Api.epicUrl),
     clientId: Api.epicPatientClientId,
     redirectUri: FhirUri(fhirCallback),
-    scopes: epicPatientScopes.scopesList(),
+    scopes: scopes.scopesList(),
   );
 
   print('created client');

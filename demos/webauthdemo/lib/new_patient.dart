@@ -7,24 +7,24 @@ Patient newPatient() {
   final zNum = digits(4).toString();
   return Patient(
     identifier: [
-      // Identifier(
-      //   type: CodeableConcept(
-      //     coding: [
-      //       Coding(
-      //         system: FhirUri('http://terminology.hl7.org/CodeSystem/v2-0203'),
-      //         code: FhirCode('SS'),
-      //       ),
-      //     ],
-      //   ),
-      //   system: FhirUri('http://hl7.org/fhir/sid/us-ssn'),
-      //   value: digits(9).toString(),
-      // ),
-      Identifier.fromJson({
-        "use": "usual",
-        "type": {"text": "WPRINTERNAL"},
-        "system": "urn:oid: 1.2.840.114350.1.13.0.1.7.2.${digits(6)}",
-        "value": "${digits(3)}",
-      }),
+      Identifier(
+        type: CodeableConcept(
+          coding: [
+            Coding(
+              system: FhirUri('http://hl7.org/fhir/sid/us-ssn'),
+              code: FhirCode('SB'),
+            ),
+          ],
+        ),
+        system: FhirUri('urn:oid:2.16.840.1.113883.4.1'),
+        value: digits(9).toString(),
+      ),
+      // Identifier.fromJson({
+      //   "use": "usual",
+      //   "type": {"text": "WPRINTERNAL"},
+      //   "system": "urn:oid: 1.2.840.114350.1.13.0.1.7.2.${digits(6)}",
+      //   "value": "${digits(3)}",
+      // }),
       Identifier.fromJson(
         {
           "use": "usual",

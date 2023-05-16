@@ -4,13 +4,9 @@ import 'package:fhir_auth/r4.dart';
 
 import 'api.dart';
 import 'new_patient.dart';
-import 'scopes.dart';
 
 Future hapiRequest() async {
-  final client = FhirClient(
-    fhirUri: FhirUri(Api.hapiUrl),
-    scopes: scopes.scopesList(),
-  );
+  final client = FhirClient(fhirUri: FhirUri(Api.hapiUrl));
 
   try {
     if (client.fhirUri.value != null) {
