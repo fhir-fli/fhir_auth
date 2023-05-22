@@ -167,13 +167,13 @@ In case anyone is interested, here is the manifest:
 10. The Provider creates a new patient
 11. Additional details on their [Sandbox Data Site](https://fhir.epic.com/Documentation?docId=testpatients)
 12. Of note, unsurprisingly, Epic makes it difficult, and requires strict-origin-when-cross-origin, meaning that while you can make a patient, you cannot then receive the new ID and find the patient that you just created
-  - Practitioner
-    - username: FHIR
-    - password: EpicFhir11!
   - Patient
     - username: fhircamila
     - password: epicepic1
-
+  - Practitioner
+    - username: FHIR
+    - password: EpicFhir11!
+    
 ### Cerner
 
 1. Must register for account at their [Code Console](https://code-console.cerner.com/) or [Cernercare](https://cernercare.com/)
