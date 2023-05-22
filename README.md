@@ -7,7 +7,7 @@ This package is supposed to allow easier authentication for FHIR applications (m
 || Provider || Patient ||
 |:-:|:-:|:-:|:-:|:-:|
 ||Standalone|Portal|Standalone|Portal||
-|MELD|Web|Web|Web|Web|
+|MELD|Web, Android|Web|Web, Android|Web|
 |Google||NA||NA|
 |Epic|Web|Web|Web|Web|
 |Cerner|NA|NA|Web|Web|
@@ -255,7 +255,7 @@ Unfortunately, neither Epic nor Cerner offer an option to use a mobile device (w
 
 Setting up your app, because it has to go deeper in Android and iOS than most, is a pain. I'm using [oauth2_client](https://pub.dev/packages/oauth2_client).
 
-In your file ```android/app/build.gradle``` you should have a section entitled ```defaultConfig```, you need to change it so that it looks similar to the following (please not the update, that for manifestPlaceholders it's now advised that you do += instead of simply = ):
+In your file ```android/app/build.gradle``` you should have a section entitled ```defaultConfig```, it should look something like this:
 
 ```gradle
     defaultConfig {
@@ -265,29 +265,27 @@ In your file ```android/app/build.gradle``` you should have a section entitled `
         targetSdkVersion 29
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        manifestPlaceholders += [
-            'appAuthRedirectScheme': 'your.application.id'
-        ]
     }
 ```
 
 A few notes.
 
 1. Your minSdkVersion needs at least 18, and preferably something like 21 or 23.
-2. "your.application.id" is usually a reverse of a typicaly url format, so could be something like: "dev.fhirfli.application". This is also going to be your callback, although it should be something like: ```dev.fhirfli.application://callback``` (or in the case of google, sometimes they only allow a single slash, i.e. ```dev.fhirfli.application:/callback```).
-3. While it may not be completely necessary, I add the ```manifestPlaceholders``` as formatted above.
+2. "your.application.id" is usually a reverse of a typicaly url format, so could be something like: "dev.fhirfli.application".
 
 In the AndroidManifest.xml file (```android/app/src/main/AndroidManifest.xml```), you will need to add this section. You should be able to add it before or after the MainActivity.
 
 ```xml
-<activity android:name="com.linusu.flutter_web_auth.CallbackActivity" >
-  <intent-filter android:label="flutter_web_auth">
-    <action android:name="android.intent.action.VIEW" />
-    <category android:name="android.intent.category.DEFAULT" />
-    <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="dev.fhirfli.mobileauthdemo" />
-  </intent-filter>
-</activity>
+        <activity
+        android:name="com.linusu.flutter_web_auth_2.CallbackActivity"
+        android:exported="true">
+            <intent-filter android:label="flutter_web_auth_2">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="your.application.id" />
+            </intent-filter>
+        </activity>
 ```
 
 ### iOS Setup
@@ -300,24 +298,13 @@ platform :ios, '11.0'
 
 ### [MELD](https://meld.interop.community/) - Mobile
 
-1. This is a relatively typical HAPI server
-2. After you have the server setup, select Apps, then create a new App.
-3. App Name and description can be what you'd like, Client Type should generally be Public Client
-4. App Launch URI for this is unimportant, because we're not launching from within their portal
-5. App redirect (given above API): ```com.myshiny.newapp://callback```
-6. You'll need to choose your own scopes, I've gone with: ```launch patient/Patient.* openid profile offline_access user/Patient.*```
-7. You'll also need to add some users (Settings -> USERS)
-
-- Practitioner
-  - username: FHIR
-  - password: EpicFhir11!
-- Patient
-  - username: fhircamila
-  - password: epicepic1
-
-- As far as I can tell, cerner only has test patients, not practitioner accounts
-  - username: nancysmart
-  - password: Cerner01
+1. Setup is similar to web
+2. Setup your app, App name and description as you'd like, Public Client, make note of the ClientId
+3. App Launch URI is only important if you're going to do deep linking, which I haven't setup yet
+4. App redirect (given above API): ```com.myshiny.newapp://callback``` (or again, ```com.myshiny.newapp:/callback``` for goole)
+5. You'll need to choose your own scopes, I've gone with: ```launch patient/Patient.* openid profile offline_access user/Patient.*```
+6. You should add users, although this isn't required
+7. Should be able to launch and login as you normally would
 
 ## Suggestions and Complaints
 

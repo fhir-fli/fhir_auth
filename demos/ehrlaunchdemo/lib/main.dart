@@ -22,6 +22,7 @@ class DemoPage extends StatelessWidget {
   final Map<String, String> queryParameters;
   @override
   Widget build(BuildContext context) {
+    print('base: ${Uri.base}');
     if (queryParameters.isNotEmpty) {
       SmartFhirClient? client;
       if (queryParameters['iss']?.contains('epic') ?? false) {
