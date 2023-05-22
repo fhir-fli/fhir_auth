@@ -5,7 +5,7 @@ import 'package:fhir_at_rest/r4.dart';
 import 'package:fhir_auth/fhir_client/epic_fhir_client.dart';
 import 'package:fhir_auth/r4.dart';
 
-import 'api.dart';
+import 'ids.dart';
 import 'new_patient.dart';
 import 'scopes.dart';
 

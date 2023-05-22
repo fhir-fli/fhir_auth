@@ -4,7 +4,7 @@ import 'package:fhir/r4.dart';
 import 'package:fhir_at_rest/r4.dart';
 import 'package:fhir_auth/r4.dart';
 
-import 'api.dart';
+import 'ids.dart';
 import 'scopes.dart';
 
 Future<void> cernerPatientRequest(Uri fhirCallback) async {
