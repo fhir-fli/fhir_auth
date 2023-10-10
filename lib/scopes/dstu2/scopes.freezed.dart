@@ -167,9 +167,10 @@ class _$ScopesCopyWithImpl<$Res, $Val extends Scopes>
 }
 
 /// @nodoc
-abstract class _$$_ScopesCopyWith<$Res> implements $ScopesCopyWith<$Res> {
-  factory _$$_ScopesCopyWith(_$_Scopes value, $Res Function(_$_Scopes) then) =
-      __$$_ScopesCopyWithImpl<$Res>;
+abstract class _$$ScopesImplCopyWith<$Res> implements $ScopesCopyWith<$Res> {
+  factory _$$ScopesImplCopyWith(
+          _$ScopesImpl value, $Res Function(_$ScopesImpl) then) =
+      __$$ScopesImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call(
@@ -189,10 +190,11 @@ abstract class _$$_ScopesCopyWith<$Res> implements $ScopesCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$_ScopesCopyWithImpl<$Res>
-    extends _$ScopesCopyWithImpl<$Res, _$_Scopes>
-    implements _$$_ScopesCopyWith<$Res> {
-  __$$_ScopesCopyWithImpl(_$_Scopes _value, $Res Function(_$_Scopes) _then)
+class __$$ScopesImplCopyWithImpl<$Res>
+    extends _$ScopesCopyWithImpl<$Res, _$ScopesImpl>
+    implements _$$ScopesImplCopyWith<$Res> {
+  __$$ScopesImplCopyWithImpl(
+      _$ScopesImpl _value, $Res Function(_$ScopesImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -212,7 +214,7 @@ class __$$_ScopesCopyWithImpl<$Res>
     Object? intent = freezed,
     Object? additional = freezed,
   }) {
-    return _then(_$_Scopes(
+    return _then(_$ScopesImpl(
       clinicalScopes: freezed == clinicalScopes
           ? _value._clinicalScopes
           : clinicalScopes // ignore: cast_nullable_to_non_nullable
@@ -271,8 +273,8 @@ class __$$_ScopesCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$_Scopes extends _Scopes {
-  const _$_Scopes(
+class _$ScopesImpl extends _Scopes {
+  const _$ScopesImpl(
       {final List<ClinicalScope>? clinicalScopes,
       this.openid,
       this.fhirUser,
@@ -369,7 +371,7 @@ class _$_Scopes extends _Scopes {
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_Scopes &&
+            other is _$ScopesImpl &&
             const DeepCollectionEquality()
                 .equals(other._clinicalScopes, _clinicalScopes) &&
             (identical(other.openid, openid) || other.openid == openid) &&
@@ -415,8 +417,8 @@ class _$_Scopes extends _Scopes {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_ScopesCopyWith<_$_Scopes> get copyWith =>
-      __$$_ScopesCopyWithImpl<_$_Scopes>(this, _$identity);
+  _$$ScopesImplCopyWith<_$ScopesImpl> get copyWith =>
+      __$$ScopesImplCopyWithImpl<_$ScopesImpl>(this, _$identity);
 }
 
 abstract class _Scopes extends Scopes {
@@ -433,7 +435,7 @@ abstract class _Scopes extends Scopes {
       final bool? needPatientBanner,
       final bool? smartOrchestrateLaunch,
       final String? intent,
-      final List<String>? additional}) = _$_Scopes;
+      final List<String>? additional}) = _$ScopesImpl;
   const _Scopes._() : super._();
 
   @override
@@ -492,6 +494,6 @@ abstract class _Scopes extends Scopes {
   List<String>? get additional;
   @override
   @JsonKey(ignore: true)
-  _$$_ScopesCopyWith<_$_Scopes> get copyWith =>
+  _$$ScopesImplCopyWith<_$ScopesImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
