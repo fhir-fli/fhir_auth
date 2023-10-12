@@ -8,7 +8,7 @@ import 'scopes.dart';
 
 Future meldRequest() async {
   final client = SmartFhirClient(
-    fhirUri: FhirUri(Api.meldUrl),
+    fhirUri: FhirUri(Uri.encodeFull(Api.meldUrl)),
     clientId: Api.meldClientId,
     redirectUri: Api.fhirCallback,
     scopes: scopes.scopesList(),

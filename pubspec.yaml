@@ -17,7 +17,7 @@ dependencies:
     sdk: flutter
   # flutter_web_plugins:
   #   sdk: flutter
-  flutter_web_auth_2: ^3.0.1
+  flutter_web_auth_2: ^2.2.1
   # flutter_web_auth_2:
   #   git:
   #     url: https://github.com/FireJuun/flutter_web_auth_2.git
@@ -29,6 +29,7 @@ dependencies:
   http_parser: ^4.0.2
   jwt_decoder: ^2.0.1
   oauth2: ^2.0.2
+  oauth2_client: ^3.2.2
   url_launcher: ^6.1.14
 
 dev_dependencies:

@@ -8,7 +8,7 @@ import 'scopes.dart';
 
 Future hapiRequest() async {
   final client = FhirClient(
-    fhirUri: FhirUri(Api.hapiUrl),
+    fhirUri: FhirUri(Uri.encodeFull(Api.hapiUrl)),
     scopes: scopes.scopesList(),
   );
 

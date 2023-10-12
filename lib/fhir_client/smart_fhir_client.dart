@@ -9,6 +9,7 @@ import 'package:collection/collection.dart';
 import 'package:fhir/primitive_types/primitive_types.dart';
 import 'package:http/http.dart' as http;
 import 'package:oauth2/oauth2.dart';
+import 'package:oauth2_client/oauth2_client.dart';
 
 // Project imports:
 import 'authenticate/base_authentication.dart';
@@ -202,6 +203,17 @@ class SmartFhirClient extends SecureFhirClient {
 
       print(authorizationUrl);
       try {
+        OAuth2Client oAuth2Client = OAuth2Client(
+          authorizeUrl: authorizationUrl.toString(),
+          tokenUrl: tokenUrl.toString(),
+          redirectUri: redirectUri!.value!.toString(),
+          customUriScheme: redirectUri!.value!.scheme,
+        );
+
+        final tokenGrantFlow = await oAuth2Client.getTokenWithImplicitGrantFlow(
+            clientId: clientId!);
+        print(tokenGrantFlow.accessToken);
+
         /// Attempt to authenticate
         final returnValue = await authClient.authenticate(
           authorizationUrl: authorizationUrl,
