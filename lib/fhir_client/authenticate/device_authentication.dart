@@ -1,5 +1,6 @@
 // Package imports:
 import 'package:fhir/primitive_types/primitive_types.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
 // Project imports:
@@ -16,10 +17,22 @@ class DeviceAuthentication implements BaseAuthentication {
     required Uri authorizationUrl,
     required FhirUri redirectUri,
   }) async {
-    print('device authentication');
-    return await FlutterWebAuth2.authenticate(
-      callbackUrlScheme: redirectUri.value!.scheme,
-      url: authorizationUrl.toString(),
-    );
+    if (['android', 'ios'].contains(defaultTargetPlatform.name)) {
+      return await FlutterWebAuth2.authenticate(
+        callbackUrlScheme: redirectUri.value!.scheme,
+        url: authorizationUrl.toString(),
+        preferEphemeral: true,
+      );
+    } else {
+      if (['linux', 'macos', 'windows'].contains(defaultTargetPlatform.name)) {
+        return await FlutterWebAuth2.authenticate(
+          callbackUrlScheme: redirectUri.value!.scheme,
+          url: authorizationUrl.toString(),
+          preferEphemeral: true,
+        );
+      }
+      throw UnsupportedError(
+          'Cannot authenticate without dart:html or dart:io.');
+    }
   }
 }

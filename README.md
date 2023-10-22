@@ -12,6 +12,8 @@ This package is supposed to allow easier authentication for FHIR applications. I
 |Epic|Web|Web|Web|Web|
 |Cerner|NA|NA|Web|Web|
 
+You'll notice that I'm missing desktop authentication. It's on the todo list, but I've run into some trouble. So if anyone wants to open a PR for this, feel free.
+
 ## Full SMART on FHIR
 
 All SMART on FHIR capabilities defined, all scopes allowed, all FHIR versions (Dstu2, Stu3, R4b, and R5) defined. Allows external standalone launches and internal portal launches. Supports both old scope scheme (read/write/*) and new scope scheme (c/r/u/d/s)
@@ -167,7 +169,7 @@ In case anyone is interested, here is the manifest:
     - username: fhircamila
     - password: epicepic1
   - Practitioner
-    - username: FHIR
+    - username: FHIRTWO
     - password: EpicFhir11!
     
 ### Cerner

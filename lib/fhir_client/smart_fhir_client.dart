@@ -14,7 +14,6 @@ import 'package:oauth2/oauth2.dart';
 import 'authenticate/base_authentication.dart';
 import 'authenticate/smart_authorization_code_grant.dart';
 import 'secure_fhir_client.dart';
-
 import 'authenticate/authenticate.dart'
     // ignore: uri_does_not_exist
     if (dart.library.io) 'authenticate/device_authentication.dart'
@@ -200,18 +199,12 @@ class SmartFhirClient extends SecureFhirClient {
       /// Replace those params as part of the authorizationUrl
       authorizationUrl = authorizationUrl.replace(queryParameters: params);
 
-      print(authorizationUrl);
       try {
         /// Attempt to authenticate
         final returnValue = await authClient.authenticate(
           authorizationUrl: authorizationUrl,
           redirectUri: redirectUri!,
         );
-
-        // https://iol2auth.interop.community/authorize?response_type=code&client_id=cfb63c54-9d77-4d14-8fe7-dd13cc01f043&redirect_uri=dev.fhirfli.mobileauthdemo%3A%2F%2Fcallback&code_challenge=00ZktEtV99EpKC9iJq8ESQegIe-deLAzplhgFrD7glk&code_challenge_method=S256&scope=openid+profile+offline_access+launch+patient%2FPatient.%2A&aud=https%3A%2F%2Fgw.interop.community%2Fauthdemo%2Fdata
-        // https://iol2auth.interop.community/authorize?response_type=code&client_id=70b3d3b3-7ed6-414b-9d7b-e0e237354449&redirect_uri=http%3A%2F%2Flocalhost%3A8888%2Fredirect.html&code_challenge=zZGM1lO2NF9mYElCEQYdaDqPmoarLg7jue2Mn7liBbg&code_challenge_method=S256&scope=openid+profile+offline_access+launch+patient%2FPatient.%2A&aud=https%3A%2F%2Fgw.interop.community%2Fauthdemo%2Fdata
-
-        print(returnValue);
 
         /// Use the returnValue's parameters to handle Authorization
         /// NOTE: as part of the authorization, we will also get other fhir

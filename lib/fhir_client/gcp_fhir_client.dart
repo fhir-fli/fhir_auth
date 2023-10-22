@@ -38,7 +38,11 @@ class GcpFhirClient extends SecureFhirClient {
   @override
   Future<void> login() async {
     try {
-      await _googleSignIn.signIn();
+      if (kIsWeb) {
+        await _googleSignIn.signInSilently();
+      } else {
+        await _googleSignIn.signIn();
+      }
     } catch (e, stack) {
       log('Exception: $e');
       log('Stack at time of Exception: \n$stack');

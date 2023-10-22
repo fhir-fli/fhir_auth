@@ -1,5 +1,11 @@
 # fhir_auth
 
+## [0.11.0-dev.1]
+
+* Updated dependencies
+* Broadened platform support
+* Updated Readme
+
 ## [0.10.0]
 
 * Updated dependencies
