@@ -17,7 +17,7 @@ import 'secure_fhir_client.dart';
 
 import 'authenticate/authenticate.dart'
     // ignore: uri_does_not_exist
-    if (dart.library.io) 'authenticate/mobile_authentication.dart'
+    if (dart.library.io) 'authenticate/device_authentication.dart'
     // ignore: uri_does_not_exist
     if (dart.library.html) 'authenticate/web_authentication.dart';
 

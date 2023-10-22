@@ -6,16 +6,17 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'base_authentication.dart';
 
 /// BaseAuthentication for mobile
-BaseAuthentication createAuthentication() => MobileAuthentication();
+BaseAuthentication createAuthentication() => DeviceAuthentication();
 
 /// MobileAuthentication Class
-class MobileAuthentication implements BaseAuthentication {
+class DeviceAuthentication implements BaseAuthentication {
   /// Only method is to authenticate
   @override
   Future<String> authenticate({
     required Uri authorizationUrl,
     required FhirUri redirectUri,
   }) async {
+    print('device authentication');
     return await FlutterWebAuth2.authenticate(
       callbackUrlScheme: redirectUri.value!.scheme,
       url: authorizationUrl.toString(),
