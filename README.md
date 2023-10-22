@@ -8,7 +8,7 @@ This package is supposed to allow easier authentication for FHIR applications. I
 |:-:|:-:|:-:|:-:|:-:|
 ||Standalone|Portal|Standalone|Portal||
 |MELD|Web, Android|Web|Web, Android|Web|
-|Google||NA||NA|
+|Google|Android|NA|Android|NA|
 |Epic|Web|Web|Web|Web|
 |Cerner|NA|NA|Web|Web|
 
@@ -249,27 +249,7 @@ Unfortunately, neither Epic nor Cerner offer an option to use a mobile device (w
 
 ### Android Setup
 
-Setting up your app, because it has to go deeper in Android and iOS than most, is a pain. I'm using [oauth2_client](https://pub.dev/packages/oauth2_client).
-
-In your file ```android/app/build.gradle``` you should have a section entitled ```defaultConfig```, it should look something like this:
-
-```gradle
-    defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "your.application.id"
-        minSdkVersion 21
-        targetSdkVersion 29
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
-    }
-```
-
-A few notes.
-
-1. Your minSdkVersion needs at least 18, and preferably something like 21 or 23.
-2. "your.application.id" is usually a reverse of a typicaly url format, so could be something like: "dev.fhirfli.application".
-
-In the AndroidManifest.xml file (```android/app/src/main/AndroidManifest.xml```), you will need to add this section. You should be able to add it before or after the MainActivity.
+For a new Flutter project, most of your setup should already be done. Previosly there was a lot of mucking about with gradles and such that we don't have to do anymore. The one thing you will have to do is add to the AndroidManifest.xml file (```android/app/src/main/AndroidManifest.xml```), you will need to add this section. You should be able to add it before or after the MainActivity.
 
 ```xml
         <activity
@@ -299,7 +279,7 @@ platform :ios, '11.0'
 3. App Launch URI is only important if you're going to do deep linking, which I haven't setup yet
 4. App redirect (given above API): ```com.myshiny.newapp://callback``` (or again, ```com.myshiny.newapp:/callback``` for goole)
 5. You'll need to choose your own scopes, I've gone with: ```launch patient/Patient.* openid profile offline_access user/Patient.*```
-6. You should add users, although this isn't required
+6. You could add users, although this isn't required
 7. Should be able to launch and login as you normally would
 
 ## Suggestions and Complaints
