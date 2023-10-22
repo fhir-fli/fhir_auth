@@ -1,6 +1,6 @@
 # fhir_auth
 
-This package is supposed to allow easier authentication for FHIR applications (mostly using SMART on FHIR although there's also support of Google, maybe eventually Amplify and Azure, but don't hold your breath). I will say, this continues to be the most frustrating package to try and develop/support. I continue to feel as though, even though each server that I work with *SAYS* that they support SMART on FHIR, I still always struggle and fight with the process.
+This package is supposed to allow easier authentication for FHIR applications. It's primary goal is to support SMART on FHIR, although it does also support login using a Google account, and I'm hoping to include AWS Amplify soon. I will say, this continues to be the most frustrating package to try and develop/support. I continue to feel as though, even though each server that I work with *SAYS* that they support SMART on FHIR, I still always struggle and fight with the process.
 
 ## Current examples in demo
 
@@ -62,10 +62,6 @@ mixin Api {
   /// because google apparently requires/prefers one slash at times
   static final googleFhirCallback = FhirUri('com.myshiny.newapp:/callback');
 
-  /// Aidbox
-  static const aidboxUrl = 'https://demo.aidbox.app/fhir';
-  static const aidboxClientId = 'e67063f5-1234-8558-9fc4-137g1mnod93b';
-
   /// GCS
   static const gcsUrl = 'https://healthcare.googleapis.com/v1/projects/'
       'brandnewdemo/locations/us-central1/'
@@ -76,13 +72,13 @@ mixin Api {
   /// HAPI Server
   static const hapiUrl = 'https://hapi.fhir.org/baseR4';
 
-  /// Interop
-  static const interopClientId = 'e77063f5-1234-1234-9de4-137e1abcd83c';
-  static const interopUrl = 'https://api.interop.community/Demo/data';
-
   /// MELD
-  static const meldClientId = 'e77063f5-1234-1234-9de4-137e1abcd83c';
+  static const meldClientId = '0eae5157-61bc-4d4b-a663-1b0bfdea3c16';
   static const meldUrl = 'https://meld.interop.community/Demo/data';
+
+  /// Epic
+  static const epicClientId = '5a13c447-56c0-4ebf-9788-7dd5374c9813';
+  static const epicUrl = 'https://fhir.epic.com/interconnect-fhir-oauth/';
 }
 ```
 
@@ -94,7 +90,7 @@ So once it's setup, it works reasonable well, it's the setup that's terrible. I'
 
 #### Redirects
 
-One of the most important things to note about web/PWA is that you need to have a redirect in order to catch the token. This means you'll need to know where the redirect will be ahead of time. It's usually the same as your launch url, but with an extra pth or subdirectory.
+One of the most important things to note about web/PWA is that you need to have a redirect in order to catch the token. This means you'll need to know where the redirect will be ahead of time. It's usually the same as your launch url, but with an extra path or subdirectory.
 
 ```sh
 https://my-shiny-new-app.com/redirect.html
@@ -183,7 +179,7 @@ In case anyone is interested, here is the manifest:
 5. Select Standard capabilities (I check all of them, but obviously select the ones you need)
 6. Product APIs - select the resources you need your app to have use of
 7. Cerner has its own annoying aspects. For instance, you can't request a ```*``` interaction, you have to request both read and write access as separate scopes
-8. Then the credentials I've been using to test with in their sandbox
+8. I haven't found any provider credentials, but they have a list of patient credentials. The following is what I've been using to test with their sandbox
   - username: nancysmart
   - password: Cerner01
 
@@ -198,7 +194,7 @@ I don't know why Google always seems to be such a pain in the ass to implement. 
 5. Application type - Web Application
 6. Name - whatever you'd like
 7. Authorized JavaScript origins - where your website lives
-8. Authorized redirect URIs - usually the same, just remember the ```redirect.html``` at the end
+8. Authorized redirect URIs - usually the same, just remember the ```/redirect.html``` at the end
 9. Identity Platform -> Add a Provider -> Select Google
 10. Web Client ID (from the above web app) and Web Client Secret (from the above web app)
 11. Lastly, in Healthcare -> Dataset -> Datastore, you need to add Principal, copy and paste the OAuth ClientId, and give it Healthcare FHIR Resource Editor Permissions.
