@@ -17,20 +17,26 @@ class DeviceAuthentication implements BaseAuthentication {
     required Uri authorizationUrl,
     required FhirUri redirectUri,
   }) async {
-    if (['android', 'ios'].contains(defaultTargetPlatform.name)) {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      // Android specific flag
       return await FlutterWebAuth2.authenticate(
-        callbackUrlScheme: redirectUri.value!.scheme,
-        url: authorizationUrl.toString(),
-        preferEphemeral: true,
-      );
-    } else {
-      if (['linux', 'macos', 'windows'].contains(defaultTargetPlatform.name)) {
-        return await FlutterWebAuth2.authenticate(
           callbackUrlScheme: redirectUri.value!.scheme,
           url: authorizationUrl.toString(),
-          preferEphemeral: true,
-        );
-      }
+          options: FlutterWebAuth2Options(
+            // Android specific flag
+            intentFlags: ephemeralIntentFlags,
+          ));
+    } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      // iOS and macOS specific flag
+      return await FlutterWebAuth2.authenticate(
+          callbackUrlScheme: redirectUri.value!.scheme,
+          url: authorizationUrl.toString(),
+          options: FlutterWebAuth2Options(
+            // iOS and macOS specific flag
+            preferEphemeral: true,
+          ));
+    } else {
       throw UnsupportedError(
           'Cannot authenticate without dart:html or dart:io.');
     }
