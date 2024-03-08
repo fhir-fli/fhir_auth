@@ -44,8 +44,7 @@ class GcpFhirClient extends SecureFhirClient {
         await _googleSignIn.signIn();
       }
     } catch (e, stack) {
-      log('Exception: $e');
-      log('Stack at time of Exception: \n$stack');
+      throw Exception('Exception: $e\nStack: $stack');
     }
   }
 
