@@ -21,7 +21,7 @@ class SecureFhirClient extends FhirClient {
     this.authHeaders,
     this.secret,
   }) : super(
-          scopes: ['openid', 'profile', if (scopes != null) ...scopes]
+          scopes: <String>['openid', 'profile', if (scopes != null) ...scopes]
               .toSet()
               .toList(),
         );

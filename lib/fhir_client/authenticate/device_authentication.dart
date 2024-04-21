@@ -22,7 +22,7 @@ class DeviceAuthentication implements BaseAuthentication {
       return await FlutterWebAuth2.authenticate(
           callbackUrlScheme: redirectUri.value!.scheme,
           url: authorizationUrl.toString(),
-          options: FlutterWebAuth2Options(
+          options: const FlutterWebAuth2Options(
             // Android specific flag
             intentFlags: ephemeralIntentFlags,
           ));
@@ -32,7 +32,7 @@ class DeviceAuthentication implements BaseAuthentication {
       return await FlutterWebAuth2.authenticate(
           callbackUrlScheme: redirectUri.value!.scheme,
           url: authorizationUrl.toString(),
-          options: FlutterWebAuth2Options(
+          options: const FlutterWebAuth2Options(
             // iOS and macOS specific flag
             preferEphemeral: true,
           ));

@@ -1,14 +1,14 @@
 import 'dart:developer';
 
-import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhir_auth/r4.dart';
+import 'package:fhir_r4/fhir_r4.dart';
 
 Future<void> main() async {
   const String url = 'http://fhirurl';
   const String clientId = 'myClienId';
   const String fhirCallback = 'fhir_auth://callback';
-  final scopes = Scopes(
-    clinicalScopes: [
+  final Scopes scopes = Scopes(
+    clinicalScopes: <ClinicalScope>[
       ClinicalScope(
         role: Role.patient,
         resourceType: R4ResourceType.Patient,
@@ -19,7 +19,7 @@ Future<void> main() async {
     offlineAccess: true,
   );
 
-  final client = SmartFhirClient(
+  final SmartFhirClient client = SmartFhirClient(
     fhirUri: FhirUri(url),
     clientId: clientId,
     redirectUri: FhirUri(fhirCallback),
@@ -29,10 +29,10 @@ Future<void> main() async {
   try {
     await client.login();
     if (client.fhirUri.value != null) {
-      final newPatient = Patient(fhirId: '12345');
+      const Patient newPatient = Patient(fhirId: '12345');
       log('Patient to be uploaded:\n${newPatient.toJson()}');
-      final request1 = FhirRequest.create(
-        base: client.fhirUri.value!,
+      final FhirRequest request1 = FhirRequest.create(
+        base: client.fhirUri.value,
         //?? Uri.parse('127.0.0.1'),
         resource: newPatient,
         client: client,
@@ -49,7 +49,7 @@ Future<void> main() async {
       if (newId is! FhirId) {
         log(newId.toString());
       } else {
-        final request2 = FhirRequest.read(
+        final FhirRequest request2 = FhirRequest.read(
           base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
           type: R4ResourceType.Patient,
           id: newId,

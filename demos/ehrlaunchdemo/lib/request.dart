@@ -35,41 +35,16 @@ Future<Resource?> request(SmartFhirClient client,
       print('Response from upload:\n${response.toJson()}');
       newId = response.fhirId;
 
-      if (newId is! String) {
-        if (response is OperationOutcome &&
-            response.issue.isNotEmpty &&
-            response.issue.first.location != null &&
-            response.issue.first.location!.isNotEmpty) {
-          final location = response.issue.first.location!.first;
-          final resourceType =
-              resourceTypeFromStringMap[location.split('/').first];
-          final newId = location.split('/').last;
-          if (resourceType == null || newId == '') {
-            print('Cannot attempt to read resource');
-          } else {
-            final request2 = FhirRequest.read(
-              base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
-              type: resourceType,
-              fhirId: newId,
-              client: client,
-            );
+      final request2 = FhirRequest.read(
+        base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
+        type: R4ResourceType.Patient,
+        fhirId: newId,
+        client: client,
+      );
 
-            final response = await request2.request();
-            print('Response from read:\n${response.toJson()}');
-          }
+      final response = await request2.request();
+      print('Response from read:\n${response.toJson()}');
         }
-      } else {
-        final request2 = FhirRequest.read(
-          base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
-          type: R4ResourceType.Patient,
-          fhirId: newId,
-          client: client,
-        );
-
-        final response = await request2.request();
-        print('Response from read:\n${response.toJson()}');
-      }
-    }
   }
   return null;
 }

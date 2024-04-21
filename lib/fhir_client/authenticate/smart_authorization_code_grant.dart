@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 // Package imports:
 import 'package:crypto/crypto.dart';
@@ -42,7 +43,7 @@ import 'package:oauth2/src/utils.dart';
 /// [authorization code grant] http://tools.ietf.org/html/draft-ietf-oauth-v2-31#section-4.1
 class SmartAuthorizationCodeGrant implements AuthorizationCodeGrant {
   /// FhirParameters
-  final Map<String, dynamic> fhirParameters = {};
+  final Map<String, dynamic> fhirParameters = <String, dynamic>{};
 
   /// The function used to parse parameters from a host's response.
   final GetParameters _getParameters;
@@ -205,15 +206,15 @@ class SmartAuthorizationCodeGrant implements AuthorizationCodeGrant {
     }
     _state = _State.awaitingResponse;
 
-    var scopeList = scopes?.toList() ?? <String>[];
-    var codeChallenge = base64Url
+    final List<String> scopeList = scopes?.toList() ?? <String>[];
+    final String codeChallenge = base64Url
         .encode(sha256.convert(ascii.encode(_codeVerifier)).bytes)
         .replaceAll('=', '');
 
     _redirectEndpoint = redirect;
     _scopes = scopeList;
     _stateString = state;
-    var parameters = {
+    final Map<String, String> parameters = <String, String>{
       'response_type': 'code',
       'client_id': identifier,
       'redirect_uri': redirect.toString(),
@@ -221,8 +222,12 @@ class SmartAuthorizationCodeGrant implements AuthorizationCodeGrant {
       'code_challenge_method': 'S256'
     };
 
-    if (state != null) parameters['state'] = state;
-    if (scopeList.isNotEmpty) parameters['scope'] = scopeList.join(_delimiter);
+    if (state != null) {
+      parameters['state'] = state;
+    }
+    if (scopeList.isNotEmpty) {
+      parameters['scope'] = scopeList.join(_delimiter);
+    }
 
     return addQueryParameters(authorizationEndpoint, parameters);
   }
@@ -267,16 +272,16 @@ class SmartAuthorizationCodeGrant implements AuthorizationCodeGrant {
     }
 
     if (parameters.containsKey('error')) {
-      var description = parameters['error_description'];
-      var uriString = parameters['error_uri'];
-      var uri = uriString == null ? null : Uri.parse(uriString);
+      final String? description = parameters['error_description'];
+      final String? uriString = parameters['error_uri'];
+      final Uri? uri = uriString == null ? null : Uri.parse(uriString);
       throw AuthorizationException(parameters['error']!, description, uri);
     } else if (!parameters.containsKey('code')) {
       throw FormatException('Invalid OAuth response for '
           '"$authorizationEndpoint": did not contain required parameter '
           '"code".');
     }
-    return await _handleAuthorizationCode(parameters['code']);
+    return _handleAuthorizationCode(parameters['code']);
   }
 
   /// Processes an authorization code directly.
@@ -303,43 +308,46 @@ class SmartAuthorizationCodeGrant implements AuthorizationCodeGrant {
     }
     _state = _State.finished;
 
-    return await _handleAuthorizationCode(authorizationCode);
+    return _handleAuthorizationCode(authorizationCode);
   }
 
   /// This works just like [handleAuthorizationCode], except it doesn't validate
   /// the state beforehand.
   Future<Client> _handleAuthorizationCode(String? authorizationCode) async {
-    var startTime = DateTime.now();
+    final DateTime startTime = DateTime.now();
 
-    var headers = <String, String>{};
+    final Map<String, String> headers = <String, String>{};
 
-    var body = {
+    final Map<String, String?> body = <String, String?>{
       'grant_type': 'authorization_code',
       'code': authorizationCode,
       'redirect_uri': _redirectEndpoint.toString(),
       'code_verifier': _codeVerifier
     };
 
-    var secret = this.secret;
+    final String? secret = this.secret;
     if (_basicAuth && secret != null) {
       headers['Authorization'] = basicAuthHeader(identifier, secret);
     } else {
       // The ID is required for this request any time basic auth isn't being
       // used, even if there's no actual client authentication to be done.
       body['client_id'] = identifier;
-      if (secret != null) body['client_secret'] = secret;
+      if (secret != null) {
+        body['client_secret'] = secret;
+      }
     }
 
-    var request = http.Request('POST', tokenEndpoint);
+    final http.Request request = http.Request('POST', tokenEndpoint);
     request.headers.addAll(headers);
     request.bodyFields = body.cast<String, String>();
-    final stream = await _httpClient.send(request);
-    final responseBytes = await stream.stream.toBytes();
-    String responseString = String.fromCharCodes(responseBytes);
-    final Map<String, dynamic> newBody = jsonDecode(responseString);
+    final http.StreamedResponse stream = await _httpClient.send(request);
+    final Uint8List responseBytes = await stream.stream.toBytes();
+    final String responseString = String.fromCharCodes(responseBytes);
+    final Map<String, dynamic> newBody =
+        jsonDecode(responseString) as Map<String, dynamic>;
     fhirParameters = newBody;
 
-    final response = http.Response.bytes(
+    final http.Response response = http.Response.bytes(
         responseBytes.toList(), stream.statusCode,
         request: stream.request,
         headers: stream.headers,
@@ -347,8 +355,8 @@ class SmartAuthorizationCodeGrant implements AuthorizationCodeGrant {
         persistentConnection: stream.persistentConnection,
         reasonPhrase: stream.reasonPhrase);
 
-    final accessToken = newBody['access_token'];
-    final idToken = newBody['id_token'];
+    final String? accessToken = newBody['access_token'] as String?;
+    final String? idToken = newBody['id_token'] as String?;
     if (accessToken != null) {
       fhirParameters = JwtDecoder.decode(accessToken);
     }
@@ -356,7 +364,7 @@ class SmartAuthorizationCodeGrant implements AuthorizationCodeGrant {
       fhirParameters = JwtDecoder.decode(idToken);
     }
 
-    var credentials = handleAccessTokenResponse(
+    final Credentials credentials = handleAccessTokenResponse(
         response, tokenEndpoint, startTime, _scopes, _delimiter,
         getParameters: _getParameters);
 
@@ -394,8 +402,9 @@ class SmartAuthorizationCodeGrant implements AuthorizationCodeGrant {
 
   /// Randomly generate a 128 character string to be used as the PKCE code verifier
   static String _createCodeVerifier() {
-    return List.generate(
-        128, (i) => _charset[Random.secure().nextInt(_charset.length)]).join();
+    return List<String>.generate(
+            128, (int i) => _charset[Random.secure().nextInt(_charset.length)])
+        .join();
   }
 
   /// Closes the grant and frees its resources.
@@ -410,20 +419,12 @@ class SmartAuthorizationCodeGrant implements AuthorizationCodeGrant {
 }
 
 /// States that [AuthorizationCodeGrant] can be in.
-class _State {
+enum _State {
   /// [AuthorizationCodeGrant.getAuthorizationUrl] has not yet been called for
   /// this grant.
-  static const initial = _State('initial');
-
-  // [AuthorizationCodeGrant.getAuthorizationUrl] has been called but neither
-  // [AuthorizationCodeGrant.handleAuthorizationResponse] nor
-  // [AuthorizationCodeGrant.handleAuthorizationCode] has been called.
-  static const awaitingResponse = _State('awaiting response');
-
-  // [AuthorizationCodeGrant.getAuthorizationUrl] and either
-  // [AuthorizationCodeGrant.handleAuthorizationResponse] or
-  // [AuthorizationCodeGrant.handleAuthorizationCode] have been called.
-  static const finished = _State('finished');
+  initial('initial'),
+  awaitingResponse('awaiting response'),
+  finished('finished');
 
   final String _name;
 

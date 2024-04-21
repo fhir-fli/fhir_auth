@@ -81,7 +81,7 @@ class FhirClient implements http.Client {
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final client = http.Client();
+    final http.Client client = http.Client();
     return await client.send(request);
   }
 }

@@ -7,17 +7,19 @@ import 'scopes.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) =>
       MaterialApp(title: 'Demo', home: DemoPage(Uri.base.queryParameters));
 }
 
 class DemoPage extends StatelessWidget {
-  const DemoPage(this.queryParameters);
+  const DemoPage(this.queryParameters, {super.key});
 
   final Map<String, String> queryParameters;
   @override
@@ -67,15 +69,15 @@ class DemoPage extends StatelessWidget {
                   ];
                 } else {
                   children = [
-                    Center(
-                      child: const Text(
+                    const Center(
+                      child: Text(
                         'App Has Not Yet Launched',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 36),
                       ),
                     ),
-                    Center(
-                      child: const Text(
+                    const Center(
+                      child: Text(
                         'While you wait, here\'s a picture of a tree',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 36),
@@ -99,24 +101,24 @@ class DemoPage extends StatelessWidget {
         ),
       );
     } else {
-      return MaterialApp(
+      return const MaterialApp(
         home: Scaffold(
           body: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 30, 16, 0),
+            padding: EdgeInsets.fromLTRB(16, 30, 16, 0),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Center(
-                    child: const Text(
+                    child: Text(
                       'App Has Not Yet Launched\n'
                       'While you wait, here\'s a picture of a tree',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 36),
                     ),
                   ),
-                  const Image(
+                  Image(
                     image: AssetImage('assets/tree.jpg'),
                   ),
                 ],

@@ -42,12 +42,14 @@ class EpicFhirClient extends SmartFhirClient {
     String redirectPath = '/redirect.html',
   }) {
     launch ??= queryParameters['launch'];
-    final launchParameters = launch == null ? null : JwtDecoder.decode(launch);
+    final Map<String, dynamic>? launchParameters =
+        launch == null ? null : JwtDecoder.decode(launch);
     fhirUri ??= queryParameters['iss'] == null
         ? throw Exception('no fhirUri was passed for SMART launch')
         : FhirUri(queryParameters['iss']);
     clientId ??= queryParameters['clientId'] ??
-        (launchParameters == null ? null : launchParameters['client_id']);
+        (launchParameters == null ? null : launchParameters['client_id'])
+            as String?;
     redirectUri ??= FhirUri(Uri(
       host: base.host,
       scheme: base.scheme,

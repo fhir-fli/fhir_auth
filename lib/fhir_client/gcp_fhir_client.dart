@@ -1,7 +1,6 @@
 // ignore_for_file: prefer_collection_literals, sort_constructors_first
 
 // Dart imports:
-import 'dart:developer';
 
 // Package imports:
 import 'package:flutter/foundation.dart';
@@ -16,7 +15,7 @@ class GcpFhirClient extends SecureFhirClient {
     super.redirectUri,
     required super.fhirUri,
     super.clientId,
-    super.scopes = const [
+    super.scopes = const <String>[
       'openid',
       'profile',
       'email',
@@ -25,7 +24,7 @@ class GcpFhirClient extends SecureFhirClient {
     ],
     super.launch,
   }) : _googleSignIn = GoogleSignIn(
-          scopes: scopes ?? [],
+          scopes: scopes ?? <String>[],
           clientId: kIsWeb ? clientId : null,
         );
 
@@ -49,6 +48,7 @@ class GcpFhirClient extends SecureFhirClient {
   }
 
   /// Logs the client out and deletes any security information that shouldn't be stored
+  @override
   Future<void> logout() async => await _googleSignIn.signOut();
 
   /// Checks if client isSignedIn (same as isLoggedIn), maintained because some

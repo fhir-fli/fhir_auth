@@ -20,18 +20,19 @@ class WebAuthentication implements BaseAuthentication {
     required Uri authorizationUrl,
     required FhirUri redirectUri,
   }) async {
-    final popupLogin = html.window.open(
+    final html.WindowBase popupLogin = html.window.open(
         authorizationUrl.toString(),
         'oauth2_client::authenticateWindow',
         'menubar=no, status=no, scrollbars=no, menubar=no, width=1000, height=800');
 
     try {
-      final messageEvt = await html.window.onMessage
-          .firstWhere((evt) => evt.origin == redirectUri.value!.origin);
+      final html.MessageEvent messageEvt = await html.window.onMessage
+          .firstWhere((html.MessageEvent evt) =>
+              evt.origin == redirectUri.value!.origin);
 
       popupLogin.close();
 
-      return messageEvt.data;
+      return messageEvt.data as String;
     } catch (e, stack) {
       throw Exception('Exception: $e\nStack: $stack');
     }

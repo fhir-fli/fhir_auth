@@ -61,7 +61,7 @@ class Scopes with _$Scopes {
   /// creates a list of strings from the Scopes object to use in the request, it
   /// checks if each item is null or false, and includes it appropriately
   List<String> scopesList() {
-    List<String> returnValue = [];
+    List<String> returnValue = <String>[];
     if (openid ?? false) {
       returnValue.add('openid');
     }
@@ -87,8 +87,8 @@ class Scopes with _$Scopes {
       returnValue.add('launch');
     }
     if (clinicalScopes != null) {
-      for (final scope in clinicalScopes!) {
-        var scopeArgument = scope.role == Role.patient
+      for (final ClinicalScope scope in clinicalScopes!) {
+        String scopeArgument = scope.role == Role.patient
             ? 'patient/'
             : scope.role == Role.user
                 ? 'user/'

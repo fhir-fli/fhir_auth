@@ -3,7 +3,6 @@ import 'package:fhir_at_rest/r4.dart';
 import 'package:fhir_auth/r4.dart';
 
 import 'ids.dart';
-import 'new_patient.dart';
 import 'scopes.dart';
 
 Future hapiRequest() async {
@@ -14,12 +13,12 @@ Future hapiRequest() async {
 
   try {
     if (client.fhirUri.value != null) {
-      final _newPatient = newPatient();
-      print('Patient to be uploaded:\n${_newPatient.toJson()}');
+      final newPatient = newPatient();
+      print('Patient to be uploaded:\n${newPatient.toJson()}');
       final request1 = FhirRequest.create(
         base: client.fhirUri.value!,
         //?? Uri.parse('127.0.0.1'),
-        resource: _newPatient,
+        resource: newPatient,
         client: client,
       );
 

@@ -1,8 +1,7 @@
-// ignore_for_file: prefer_collection_literals, sort_constructors_first
+// ignore_for_file: prefer_collection_literals, sort_constructors_first, avoid_dynamic_calls
 
 // Dart imports:
 import 'dart:convert';
-import 'dart:developer';
 
 // Package imports:
 import 'package:collection/collection.dart';
@@ -174,7 +173,7 @@ class SmartFhirClient extends SecureFhirClient {
 
       /// Create a new code grant (had to extend it, because FHIR uses
       /// non-standard parameters)
-      final grant = SmartAuthorizationCodeGrant(
+      final SmartAuthorizationCodeGrant grant = SmartAuthorizationCodeGrant(
         clientId!,
         authorizeUrl!.value!,
         tokenUrl!.value!,
@@ -182,13 +181,14 @@ class SmartFhirClient extends SecureFhirClient {
       );
 
       /// Get the authorizationUrl
-      var authorizationUrl = grant.getAuthorizationUrl(
+      Uri authorizationUrl = grant.getAuthorizationUrl(
         redirectUri!.value!,
         scopes: scopes,
       );
 
       /// Create a map from the parameters
-      final params = Map.of(authorizationUrl.queryParameters);
+      final Map<String, String> params =
+          Map<String, String>.of(authorizationUrl.queryParameters);
 
       /// Add the aud in
       params['aud'] = '$fhirUri';
@@ -202,7 +202,7 @@ class SmartFhirClient extends SecureFhirClient {
 
       try {
         /// Attempt to authenticate
-        final returnValue = await authClient.authenticate(
+        final String returnValue = await authClient.authenticate(
           authorizationUrl: authorizationUrl,
           redirectUri: redirectUri!,
         );
@@ -215,8 +215,8 @@ class SmartFhirClient extends SecureFhirClient {
             Uri.parse(returnValue).queryParameters);
 
         /// assign context values if available
-        patientId = grant.fhirParameters['patient'];
-        encounterId = grant.fhirParameters['encounter'];
+        patientId = grant.fhirParameters['patient'] as String?;
+        encounterId = grant.fhirParameters['encounter'] as String?;
         needPatientBanner = grant.fhirParameters['need_patient_banner'] == null
             ? null
             : grant.fhirParameters['need_patient_banner'].toString() == 'true'
@@ -225,14 +225,14 @@ class SmartFhirClient extends SecureFhirClient {
                         'false'
                     ? false
                     : null;
-        smartStyleUrl = grant.fhirParameters['smart_style_url'];
-        fhirContext = grant.fhirParameters['fhirContext'];
-        intent = grant.fhirParameters['intent'];
-        tenant = grant.fhirParameters['tenant'];
-        fhirUser = grant.fhirParameters['fhirUser'];
-        displayName = grant.fhirParameters['displayName'];
-        email = grant.fhirParameters['email'];
-        profile = grant.fhirParameters['profile'];
+        smartStyleUrl = grant.fhirParameters['smart_style_url'] as String?;
+        fhirContext = grant.fhirParameters['fhirContext'] as List<String>?;
+        intent = grant.fhirParameters['intent'] as String?;
+        tenant = grant.fhirParameters['tenant'] as String?;
+        fhirUser = grant.fhirParameters['fhirUser'] as String?;
+        displayName = grant.fhirParameters['displayName'] as String?;
+        email = grant.fhirParameters['email'] as String?;
+        profile = grant.fhirParameters['profile'] as String?;
       } catch (e, stack) {
         throw Exception('Exception: $e\nStack: $stack');
       }
@@ -254,6 +254,7 @@ class SmartFhirClient extends SecureFhirClient {
       (client!.credentials.expiration?.isAfter(DateTime.now()) ?? false);
 
   /// Logs the client out and deletes any security information that shouldn't be stored
+  @override
   Future<void> logout() async {
     client?.close();
     client = null;
@@ -386,7 +387,7 @@ class SmartFhirClient extends SecureFhirClient {
   /// Endpoint and taking out the Authentication and Token endpoints
   Future<Map<String, dynamic>> _getCapabilityStatement() async {
     /// Request for the CapabilityStatement (or Conformance)
-    var thisRequest = '$fhirUri/metadata?mode=full&_format=json';
+    String thisRequest = '$fhirUri/metadata?mode=full&_format=json';
     http.Response? result = await http.get(Uri.parse(thisRequest));
 
     if (_errorCodeMap.containsKey(result.statusCode)) {
@@ -407,9 +408,10 @@ class SmartFhirClient extends SecureFhirClient {
     /// the referencePolicy field
     if (thisRequest.contains('aidbox')) {
       returnResult = jsonDecode(result.body.replaceAll(
-          '"referencePolicy":"local"', '"referencePolicy":["local"]'));
+              '"referencePolicy":"local"', '"referencePolicy":["local"]'))
+          as Map<String, dynamic>;
     } else {
-      returnResult = jsonDecode(result.body);
+      returnResult = jsonDecode(result.body) as Map<String, dynamic>;
     }
 
     return returnResult;
@@ -417,16 +419,16 @@ class SmartFhirClient extends SecureFhirClient {
 
   /// convenience method for finding either the token or authorize endpoint
   FhirUri? _getUri(Map<String, dynamic> capabilityStatement, String type) {
-    final capabilityStatementRest = capabilityStatement['rest'];
+    final dynamic capabilityStatementRest = capabilityStatement['rest'];
     if (capabilityStatementRest is List) {
-      final securityExtension = capabilityStatementRest
+      final dynamic securityExtension = capabilityStatementRest
           .firstWhereOrNull((_) => true)?['security']?['extension'];
       if (securityExtension is List) {
-        final securityExtensionExtension =
+        final dynamic securityExtensionExtension =
             securityExtension.firstWhereOrNull((_) => true)?['extension'];
         if (securityExtensionExtension is List) {
-          final extensionType = securityExtensionExtension
-              .firstWhereOrNull((ext) => ext['url'].toString() == type);
+          final dynamic extensionType = securityExtensionExtension
+              .firstWhereOrNull((dynamic ext) => ext['url'].toString() == type);
           if (extensionType is Map) {
             if (extensionType['valueUri'] != null) {
               return FhirUri(extensionType['valueUri'].toString());
@@ -439,7 +441,7 @@ class SmartFhirClient extends SecureFhirClient {
   }
 
   /// Map of the error codes to check when making requests
-  static const _errorCodeMap = {
+  static const Map<int, String> _errorCodeMap = <int, String>{
     400: 'Bad Request',
     401: 'Not Authorized',
     404: 'Not Found',

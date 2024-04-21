@@ -10,17 +10,21 @@ import 'meld_request.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Demo', home: DemoPage());
+    return const MaterialApp(title: 'Demo', home: DemoPage());
   }
 }
 
 class DemoPage extends StatelessWidget {
+  const DemoPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final currentUri = Uri.base;
@@ -60,7 +64,7 @@ class DemoPage extends StatelessWidget {
                     side: MaterialStateProperty.all(
                         const BorderSide(color: Colors.black)),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Epic Patient',
                     style: TextStyle(
                       color: Colors.black,
@@ -76,7 +80,7 @@ class DemoPage extends StatelessWidget {
                     side: MaterialStateProperty.all(
                         const BorderSide(color: Colors.black)),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Epic Clinician',
                     style: TextStyle(
                       color: Colors.black,
@@ -95,7 +99,7 @@ class DemoPage extends StatelessWidget {
                   child: Column(
                     children: [
                       Image.asset('assets/cerner.png'),
-                      Text(
+                      const Text(
                         'Patient',
                         style: TextStyle(
                           color: Colors.black,
