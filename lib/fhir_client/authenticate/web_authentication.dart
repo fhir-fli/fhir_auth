@@ -33,7 +33,7 @@ class WebAuthentication implements BaseAuthentication {
 
       return messageEvt.data;
     } catch (e, stack) {
-      return 'Failed with Exception:$e\nHere is the Stack: $stack';
+      throw Exception('Exception: $e\nStack: $stack');
     }
   }
 }
