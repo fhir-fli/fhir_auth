@@ -1,5 +1,5 @@
 // Package imports:
-import 'package:fhir/r5/resource/resource.dart';
+import 'package:fhir_r5/fhir_r5.dart';
 
 /// This includes the older format as well as the newer, more granular delineation
 /// http://www.hl7.org/fhir/smart-app-launch/scopes-and-launch-context.html#scopes-for-requesting-clinical-data

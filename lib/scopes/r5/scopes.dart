@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_final_locals
 
 // Package imports:
-import 'package:fhir/r5.dart';
+import 'package:fhir_r5/fhir_r5.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 // Project imports:

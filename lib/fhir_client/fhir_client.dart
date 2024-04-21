@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 // Package imports:
-import 'package:fhir/primitive_types/primitive_types.dart';
+import 'package:fhir_primitives/fhir_primitives.dart';
 import 'package:http/http.dart' as http;
 
 /// Base class for all clients that are interacting with a FHIR server

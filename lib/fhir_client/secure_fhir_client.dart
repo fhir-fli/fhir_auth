@@ -4,7 +4,7 @@
 import 'dart:convert';
 
 // Package imports:
-import 'package:fhir/primitive_types/primitive_types.dart';
+import 'package:fhir_primitives/fhir_primitives.dart';
 import 'package:http/http.dart' as http;
 
 // Project imports:

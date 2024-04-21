@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:fhir/r4.dart';
+import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhir_auth/r4.dart';
 
 Future<void> main() async {

@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:fhir/r4.dart';
+import 'package:fhir_r4/fhir_r4.dart';
 
 Patient newPatient() => Patient(
       active: FhirBoolean(true),

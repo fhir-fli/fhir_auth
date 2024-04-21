@@ -1,5 +1,5 @@
 // Package imports:
-import 'package:fhir/r4.dart';
+import 'package:fhir_primitives/fhir_primitives.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 // Project imports:

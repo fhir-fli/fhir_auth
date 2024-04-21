@@ -6,20 +6,19 @@ import 'dart:developer';
 
 // Package imports:
 import 'package:collection/collection.dart';
-import 'package:fhir/primitive_types/primitive_types.dart';
+import 'package:fhir_primitives/fhir_primitives.dart';
 import 'package:http/http.dart' as http;
 import 'package:oauth2/oauth2.dart';
-import 'package:oauth2_client/oauth2_client.dart';
 
 // Project imports:
-import 'authenticate/base_authentication.dart';
-import 'authenticate/smart_authorization_code_grant.dart';
-import 'secure_fhir_client.dart';
 import 'authenticate/authenticate.dart'
     // ignore: uri_does_not_exist
     if (dart.library.io) 'authenticate/device_authentication.dart'
     // ignore: uri_does_not_exist
     if (dart.library.html) 'authenticate/web_authentication.dart';
+import 'authenticate/base_authentication.dart';
+import 'authenticate/smart_authorization_code_grant.dart';
+import 'secure_fhir_client.dart';
 
 /// Base Smart FHIR Client used for SMART on FHIR Launches
 class SmartFhirClient extends SecureFhirClient {
@@ -167,7 +166,8 @@ class SmartFhirClient extends SecureFhirClient {
     if (!(await isLoggedIn())) {
       /// if no authorizeUrl or tokenUrl, go find them
       if (authorizeUrl == null || tokenUrl == null) {
-        final capabilityStatement = await _getCapabilityStatement();
+        final Map<String, dynamic> capabilityStatement =
+            await _getCapabilityStatement();
         authorizeUrl = _getUri(capabilityStatement, 'authorize');
         tokenUrl = _getUri(capabilityStatement, 'token');
       }
@@ -201,17 +201,6 @@ class SmartFhirClient extends SecureFhirClient {
       authorizationUrl = authorizationUrl.replace(queryParameters: params);
 
       try {
-        OAuth2Client oAuth2Client = OAuth2Client(
-          authorizeUrl: authorizationUrl.toString(),
-          tokenUrl: tokenUrl.toString(),
-          redirectUri: redirectUri!.value!.toString(),
-          customUriScheme: redirectUri!.value!.scheme,
-        );
-
-        final tokenGrantFlow = await oAuth2Client.getTokenWithImplicitGrantFlow(
-            clientId: clientId!);
-        print(tokenGrantFlow.accessToken);
-
         /// Attempt to authenticate
         final returnValue = await authClient.authenticate(
           authorizationUrl: authorizationUrl,

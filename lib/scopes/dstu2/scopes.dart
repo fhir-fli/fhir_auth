@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_final_locals
 
 // Package imports:
-import 'package:fhir/dstu2.dart';
+import 'package:fhir_dstu2/fhir_dstu2.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 // Project imports:

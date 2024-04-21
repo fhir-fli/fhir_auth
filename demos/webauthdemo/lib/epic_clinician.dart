@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:fhir/r4.dart';
+import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhir_at_rest/r4.dart';
 import 'package:fhir_auth/fhir_client/epic_fhir_client.dart';
 import 'package:fhir_auth/r4.dart';

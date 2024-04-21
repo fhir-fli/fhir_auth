@@ -4,7 +4,7 @@
 import 'dart:html' as html;
 
 // Package imports:
-import 'package:fhir/primitive_types/primitive_types.dart';
+import 'package:fhir_primitives/fhir_primitives.dart';
 
 // Project imports:
 import 'base_authentication.dart';
