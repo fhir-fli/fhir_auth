@@ -233,8 +233,7 @@ class SmartFhirClient extends SecureFhirClient {
         email = grant.fhirParameters['email'];
         profile = grant.fhirParameters['profile'];
       } catch (e, stack) {
-        log('Exception: $e');
-        log('Stack: $stack');
+        throw Exception('Exception: $e\nStack: $stack');
       }
     }
   }
