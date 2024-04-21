@@ -49,17 +49,17 @@ class GcpFhirClient extends SecureFhirClient {
 
   /// Logs the client out and deletes any security information that shouldn't be stored
   @override
-  Future<void> logout() async => await _googleSignIn.signOut();
+  Future<void> logout() async => _googleSignIn.signOut();
 
   /// Checks if client isSignedIn (same as isLoggedIn), maintained because some
   /// clients use one and some prefer the other
   @override
-  Future<bool> isSignedIn() async => await _googleSignIn.isSignedIn();
+  Future<bool> isSignedIn() async => _googleSignIn.isSignedIn();
 
   /// Checks if client isLoggedIn (same as isSignedIn), maintained because some
   /// clients use one and some prefer the other
   @override
-  Future<bool> isLoggedIn() async => await _googleSignIn.isSignedIn();
+  Future<bool> isLoggedIn() async => _googleSignIn.isSignedIn();
 
   /// Adds security/authorizaton headers to all http requests made with this client
   @override

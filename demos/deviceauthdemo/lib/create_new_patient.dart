@@ -1,60 +1,21 @@
 import 'dart:math';
 
+import 'package:fhir_primitives/fhir_primitives.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
-Patient newPatient() {
-  final endDigits = digits(6).toString();
-  final zNum = digits(4).toString();
-  return Patient(
-    identifier: [
-      Identifier(
-        type: CodeableConcept(
-          coding: [
-            Coding(
-              system: FhirUri('http://hl7.org/fhir/sid/us-ssn'),
-              code: FhirCode('SB'),
-            ),
-          ],
+Patient createNewPatient() => Patient(
+      active: FhirBoolean(true),
+      name: [
+        HumanName(
+          family: lastNames[random(50)],
+          given: [firstNames[random(200)]],
         ),
-        system: FhirUri('urn:oid:2.16.840.1.113883.4.1'),
-        value: digits(9).toString(),
-      ),
-      // Identifier.fromJson({
-      //   "use": "usual",
-      //   "type": {"text": "WPRINTERNAL"},
-      //   "system": "urn:oid: 1.2.840.114350.1.13.0.1.7.2.${digits(6)}",
-      //   "value": "${digits(3)}",
-      // }),
-      Identifier.fromJson(
-        {
-          "use": "usual",
-          "type": {"text": "EXTERNAL"},
-          "system": "urn:oid: 1.2.840.114350.1.13.0.1.7.2.$endDigits",
-          "value": "Z$zNum"
-        },
-      ),
-      Identifier.fromJson(
-        {
-          "use": "usual",
-          "type": {"text": "INTERNAL"},
-          "system": "urn:oid: 1.2.840.114350.1.13.0.1.7.2.$endDigits",
-          "value": "Z$zNum"
-        },
-      ),
-    ],
-    active: FhirBoolean(true),
-    name: [
-      HumanName(
-        family: lastNames[random(50)],
-        given: [firstNames[random(200)]],
-      ),
-    ],
-    address: [Address(postalCode: zipCode())],
-    gender: random(10) < 5 ? FhirCode('male') : FhirCode('female'),
-    birthDate: FhirDate(
-        '${1900 + random(120)}-0${random(8) + 1}-${(random(27) + 1).toString().padLeft(2, '0')}'),
-  );
-}
+      ],
+      address: [Address(postalCode: zipCode())],
+      gender: random(10) < 5 ? FhirCode('male') : FhirCode('female'),
+      birthDate: FhirDate(
+          '${1900 + random(120)}-0${random(8) + 1}-${(random(27) + 1).toString().padLeft(2, '0')}'),
+    );
 
 int random(int numb) {
   final rand = Random();

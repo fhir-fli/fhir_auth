@@ -1,7 +1,7 @@
 import 'dart:convert';
 
+import 'package:fhir_primitives/fhir_primitives.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhir_at_rest/r4.dart';
 import 'package:fhir_auth/r4.dart';
 
 import 'ids.dart';
@@ -25,7 +25,7 @@ Future<void> cernerPatientRequest(Uri fhirCallback) async {
     final request = FhirRequest.read(
       base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
       type: R4ResourceType.Patient,
-      fhirId: '${client.patientId}',
+      id: '${client.patientId}',
       client: client,
     );
     try {

@@ -1,9 +1,10 @@
+import 'package:fhir_primitives/fhir_primitives.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhir_at_rest/r4.dart';
 import 'package:fhir_auth/r4.dart';
 
 import 'ids.dart';
 import 'scopes.dart';
+import 'create_new_patient.dart';
 
 Future meldRequest() async {
   final client = SmartFhirClient(
@@ -15,7 +16,7 @@ Future meldRequest() async {
 
   try {
     await client.login();
-    final newPatient = newPatient();
+    final newPatient = createNewPatient();
     print('Patient to be uploaded:\n${newPatient.toJson()}');
     final request1 = FhirRequest.create(
       base: client.fhirUri.value!,
@@ -28,7 +29,7 @@ Future meldRequest() async {
     try {
       final response = await request1.request(headers: {});
       print('Response from upload:\n${response.toJson()}');
-      newId = response.fhirId;
+      newId = response.id;
     } catch (e) {
       print(e);
     }
@@ -38,7 +39,7 @@ Future meldRequest() async {
       final request2 = FhirRequest.read(
         base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
         type: R4ResourceType.Patient,
-        fhirId: newId,
+        id: newId,
         client: client,
       );
       try {

@@ -1,6 +1,9 @@
+// ignore_for_file: unreachable_from_main
+
 import 'dart:developer';
 
 import 'package:fhir_auth/r4.dart';
+import 'package:fhir_primitives/fhir_primitives.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 
 Future<void> main() async {
@@ -29,7 +32,7 @@ Future<void> main() async {
   try {
     await client.login();
     if (client.fhirUri.value != null) {
-      const Patient newPatient = Patient(fhirId: '12345');
+      const Patient newPatient = Patient(id: '12345');
       log('Patient to be uploaded:\n${newPatient.toJson()}');
       final FhirRequest request1 = FhirRequest.create(
         base: client.fhirUri.value,
@@ -40,7 +43,7 @@ Future<void> main() async {
 
       String? newId;
       try {
-        final response = await request1.request();
+        final Resource response = await request1.request();
         log('Response from upload:\n${response.toJson()}');
         newId = response.id;
       } catch (e) {
@@ -56,7 +59,7 @@ Future<void> main() async {
           client: client,
         );
         try {
-          final response = await request2.request();
+          final Resource response = await request2.request();
           log('Response from read:\n${response.toJson()}');
         } catch (e) {
           log(e.toString());
@@ -79,7 +82,17 @@ class FhirRequest {
 
   FhirRequest(this.base, this.type, this.id, this.client, this.resource);
 
-  dynamic request() => '';
+  FhirRequest copyWith({
+    Uri? base,
+    R4ResourceType? type,
+    String? id,
+    FhirClient? client,
+    Resource? resource,
+  }) =>
+      FhirRequest(base ?? this.base, type ?? this.type, id ?? this.id,
+          client ?? this.client, resource ?? this.resource);
+
+  Future<Resource> request() async => const Patient();
 
   factory FhirRequest.read({
     Uri? base,

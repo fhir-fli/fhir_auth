@@ -1,12 +1,12 @@
 import 'dart:math';
 
+import 'package:fhir_primitives/fhir_primitives.dart';
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhir_at_rest/r4.dart';
 import 'package:fhir_auth/fhir_client/epic_fhir_client.dart';
 import 'package:fhir_auth/r4.dart';
+import 'package:webauthdemo/create_new_patient.dart';
 
 import 'ids.dart';
-import 'new_patient.dart';
 import 'scopes.dart';
 
 Future<void> epicClinicianRequest(Uri fhirCallback) async {
@@ -24,7 +24,7 @@ Future<void> epicClinicianRequest(Uri fhirCallback) async {
   print('logged in');
 
   if (client.fhirUri.value != null) {
-    final patientToUpload = newPatient();
+    final patientToUpload = createNewPatient();
     print('Patient to be uploaded:\n${patientToUpload.toJson()}');
     final request1 = FhirRequest.create(
       base: client.fhirUri.value!,
@@ -32,11 +32,9 @@ Future<void> epicClinicianRequest(Uri fhirCallback) async {
       client: client,
     );
 
-    String? newId;
-
     final response = await request1.request();
     print('Response from upload:\n${response.toJson()}');
-    newId = response.fhirId;
+    // String? newId = response.id;
   }
 }
 

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhir_auth/r4.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +66,7 @@ class DemoPage extends StatelessWidget {
                         'Last Name: ${(snapshot.data as Patient).name?[0].family}'),
                     Text(
                         'Given Names: ${(snapshot.data as Patient).name?[0].given?.join(" ")}'),
-                    Text('ID: ${(snapshot.data as Patient).fhirId}'),
+                    Text('ID: ${(snapshot.data as Patient).id}'),
                     Text('ISS: ${client?.fhirUri}'),
                   ];
                 } else {

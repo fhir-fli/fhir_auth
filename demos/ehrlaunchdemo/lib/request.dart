@@ -1,5 +1,6 @@
+// ignore_for_file: avoid_print
+
 import 'package:fhir_r4/fhir_r4.dart';
-import 'package:fhir_at_rest/r4.dart';
 import 'package:fhir_auth/r4.dart';
 
 Future<Resource?> request(SmartFhirClient client,
@@ -13,7 +14,7 @@ Future<Resource?> request(SmartFhirClient client,
         final request2 = FhirRequest.read(
           base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
           type: R4ResourceType.Patient,
-          fhirId: client.patientId!,
+          id: client.patientId!,
           client: client,
         );
 
@@ -33,18 +34,20 @@ Future<Resource?> request(SmartFhirClient client,
 
       final response = await request1.request();
       print('Response from upload:\n${response.toJson()}');
-      newId = response.fhirId;
+      newId = response.id;
 
-      final request2 = FhirRequest.read(
-        base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
-        type: R4ResourceType.Patient,
-        fhirId: newId,
-        client: client,
-      );
+      if (newId != null) {
+        final request2 = FhirRequest.read(
+          base: client.fhirUri.value ?? Uri.parse('127.0.0.1'),
+          type: R4ResourceType.Patient,
+          id: newId,
+          client: client,
+        );
 
-      final response = await request2.request();
-      print('Response from read:\n${response.toJson()}');
-        }
+        final response = await request2.request();
+        print('Response from read:\n${response.toJson()}');
+      }
+    }
   }
   return null;
 }

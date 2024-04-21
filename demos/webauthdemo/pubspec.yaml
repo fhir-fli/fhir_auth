@@ -6,12 +6,10 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  fhir: ^0.12.0
-  # fhir:
-  #   path: ../../../fhir
-  fhir_at_rest: ^0.12.0
-  # fhir_at_rest:
-  #   path: ../../../fhir_at_rest
+  fhir_r4:
+    path: ../../../fhir_r4
+  fhir_primitives:
+    path: ../../../fhir_primitives
   fhir_auth:
     path: ../../../fhir_auth
   flutter:
@@ -20,7 +18,9 @@ dependencies:
     sdk: flutter
   google_sign_in: ^6.2.1
 
-  fhir_r4: any
+dependency_overrides:
+  meta: ^1.12.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

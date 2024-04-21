@@ -28,7 +28,7 @@ class FhirClient implements http.Client {
   /// Sends an HTTP GET request with the given headers to the given URL.
   @override
   Future<http.Response> get(Uri url, {Map<String, String>? headers}) async =>
-      await http.get(url, headers: headers);
+      http.get(url, headers: headers);
 
   /// Sends an HTTP PUT request with the given headers and body to the given URL.
   @override
@@ -36,7 +36,7 @@ class FhirClient implements http.Client {
           {Map<String, String>? headers,
           Object? body,
           Encoding? encoding}) async =>
-      await http.put(url, headers: headers, body: body, encoding: encoding);
+      http.put(url, headers: headers, body: body, encoding: encoding);
 
   /// Sends an HTTP POST request with the given headers and body to the given URL.
   @override
@@ -44,7 +44,7 @@ class FhirClient implements http.Client {
           {Map<String, String>? headers,
           Object? body,
           Encoding? encoding}) async =>
-      await http.post(url, headers: headers, body: body, encoding: encoding);
+      http.post(url, headers: headers, body: body, encoding: encoding);
 
   /// Sends an HTTP DELETE request with the given headers and body to the given URL.
   @override
@@ -52,7 +52,7 @@ class FhirClient implements http.Client {
           {Map<String, String>? headers,
           Object? body,
           Encoding? encoding}) async =>
-      await http.delete(url, headers: headers, encoding: encoding);
+      http.delete(url, headers: headers, encoding: encoding);
 
   /// Sends an HTTP PATCH request with the given headers and body to the given URL.
   @override
@@ -60,7 +60,7 @@ class FhirClient implements http.Client {
           {Map<String, String>? headers,
           Object? body,
           Encoding? encoding}) async =>
-      await http.patch(url, headers: headers, body: body, encoding: encoding);
+      http.patch(url, headers: headers, body: body, encoding: encoding);
 
   /// Not so important for the generic client
   @override
@@ -68,7 +68,7 @@ class FhirClient implements http.Client {
 
   @override
   Future<http.Response> head(Uri url, {Map<String, String>? headers}) async =>
-      await http.head(url, headers: headers);
+      http.head(url, headers: headers);
 
   @override
   Future<String> read(Uri url, {Map<String, String>? headers}) async =>
@@ -82,6 +82,6 @@ class FhirClient implements http.Client {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final http.Client client = http.Client();
-    return await client.send(request);
+    return client.send(request);
   }
 }

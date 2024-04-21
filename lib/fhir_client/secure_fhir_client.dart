@@ -66,7 +66,7 @@ class SecureFhirClient extends FhirClient {
   /// Sends an HTTP GET request with the given headers to the given URL.
   @override
   Future<http.Response> get(Uri url, {Map<String, String>? headers}) async =>
-      await http.get(url, headers: await newHeaders(headers));
+      http.get(url, headers: await newHeaders(headers));
 
   /// Sends an HTTP PUT request with the given headers to the given URL.
   /// Adds security headers to the request before sending.
@@ -75,7 +75,7 @@ class SecureFhirClient extends FhirClient {
           {Map<String, String>? headers,
           Object? body,
           Encoding? encoding}) async =>
-      await http.put(
+      http.put(
         url,
         headers: await newHeaders(headers),
         body: body,
@@ -89,7 +89,7 @@ class SecureFhirClient extends FhirClient {
           {Map<String, String>? headers,
           Object? body,
           Encoding? encoding}) async =>
-      await http.post(
+      http.post(
         url,
         headers: await newHeaders(headers),
         body: body,
@@ -103,7 +103,7 @@ class SecureFhirClient extends FhirClient {
           {Map<String, String>? headers,
           Object? body,
           Encoding? encoding}) async =>
-      await http.delete(
+      http.delete(
         url,
         headers: await newHeaders(headers),
         body: body,
@@ -117,7 +117,7 @@ class SecureFhirClient extends FhirClient {
           {Map<String, String>? headers,
           Object? body,
           Encoding? encoding}) async =>
-      await http.patch(
+      http.patch(
         url,
         headers: await newHeaders(headers),
         body: body,

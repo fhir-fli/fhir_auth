@@ -66,7 +66,7 @@ class ClinicalScope {
     this.resourceType,
     bool? allTypes,
     required this.interaction,
-  }) : allTypes = resourceType == null ? true : allTypes ?? false;
+  }) : allTypes = resourceType == null || (allTypes ?? false);
 
   final Role role;
   final R4ResourceType? resourceType;
