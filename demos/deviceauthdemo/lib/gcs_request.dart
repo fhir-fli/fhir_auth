@@ -1,4 +1,3 @@
-import 'package:fhir_primitives/fhir_primitives.dart';
 import 'package:fhir_r4/fhir_r4.dart';
 import 'package:fhir_auth/r4.dart';
 
@@ -7,12 +6,10 @@ import 'create_new_patient.dart';
 
 Future gcsRequest() async {
   final client = GcpFhirClient(
-    clientId: Api.gcsClientId,
-    redirectUri: Api.fhirCallback,
     fhirUri: FhirUri(Api.gcsUrl),
   );
 
-  await client.login();
+  await client.login('grey@fhirfli.dev', 'password1234');
 
   final newPatient = createNewPatient();
   print('Patient to be uploaded: ${newPatient.toJson()}');
