@@ -9,7 +9,7 @@ Future gcsRequest() async {
     fhirUri: FhirUri(Api.gcsUrl),
   );
 
-  await client.login('grey@fhirfli.dev', 'password1234');
+  await client.login();
 
   final newPatient = createNewPatient();
   print('Patient to be uploaded: ${newPatient.toJson()}');

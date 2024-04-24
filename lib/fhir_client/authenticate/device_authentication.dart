@@ -19,7 +19,7 @@ class DeviceAuthentication implements BaseAuthentication {
   }) async {
     if (defaultTargetPlatform == TargetPlatform.android) {
       // Android specific flag
-      return await FlutterWebAuth2.authenticate(
+      return FlutterWebAuth2.authenticate(
           callbackUrlScheme: redirectUri.value!.scheme,
           url: authorizationUrl.toString(),
           options: const FlutterWebAuth2Options(
@@ -29,7 +29,7 @@ class DeviceAuthentication implements BaseAuthentication {
     } else if (defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS) {
       // iOS and macOS specific flag
-      return await FlutterWebAuth2.authenticate(
+      return FlutterWebAuth2.authenticate(
           callbackUrlScheme: redirectUri.value!.scheme,
           url: authorizationUrl.toString(),
           options: const FlutterWebAuth2Options(

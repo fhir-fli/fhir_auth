@@ -3,7 +3,6 @@
 // Dart imports:
 
 // Package imports:
-import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 // Project imports:
@@ -23,25 +22,21 @@ class GcpFhirClient extends SecureFhirClient {
       'https://www.googleapis.com/auth/userinfo.profile',
     ],
     super.launch,
-  }) : _googleSignIn = GoogleSignIn(
-          scopes: scopes ?? <String>[],
-          clientId: kIsWeb ? clientId : null,
-        );
+  });
 
-  final GoogleSignIn _googleSignIn;
+  GoogleSignInAccount? _googleSignIn;
 
-  String? get userEmail => _googleSignIn.currentUser?.email;
-  String? get displayName => _googleSignIn.currentUser?.displayName;
+  String? get userEmail => _googleSignIn?.email;
+  String? get displayName => _googleSignIn?.displayName;
 
   /// Method to login the client
   @override
   Future<void> login() async {
     try {
-      if (kIsWeb) {
-        await _googleSignIn.signInSilently();
-      } else {
-        await _googleSignIn.signIn();
-      }
+      // Trigger the authentication flow
+      _googleSignIn =
+          await GoogleSignIn(scopes: scopes ?? <String>[], clientId: clientId)
+              .signIn();
     } catch (e, stack) {
       throw Exception('Exception: $e\nStack: $stack');
     }
@@ -49,24 +44,23 @@ class GcpFhirClient extends SecureFhirClient {
 
   /// Logs the client out and deletes any security information that shouldn't be stored
   @override
-  Future<void> logout() async => _googleSignIn.signOut();
+  Future<void> logout() async {}
 
   /// Checks if client isSignedIn (same as isLoggedIn), maintained because some
   /// clients use one and some prefer the other
   @override
-  Future<bool> isSignedIn() async => _googleSignIn.isSignedIn();
+  Future<bool> isSignedIn() async => false;
 
   /// Checks if client isLoggedIn (same as isSignedIn), maintained because some
   /// clients use one and some prefer the other
   @override
-  Future<bool> isLoggedIn() async => _googleSignIn.isSignedIn();
+  Future<bool> isLoggedIn() async => false;
 
   /// Adds security/authorizaton headers to all http requests made with this client
   @override
   Future<Map<String, String>> newHeaders(Map<String, String>? headers) async {
     headers ??= <String, String>{};
-    headers.addAll(
-        await _googleSignIn.currentUser?.authHeaders ?? <String, String>{});
+    headers.addAll(await _googleSignIn?.authHeaders ?? <String, String>{});
     return headers;
   }
 }
