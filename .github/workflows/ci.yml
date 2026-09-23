@@ -1,0 +1,47 @@
+# Added 2026-09-23 (family hardening): the same gate as fhir_r4's ci.yml.
+# Every package is formatted, analyzed and tested on every push; a failure
+# in one package does not stop the others from being checked.
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Format, analyze & test each package
+        run: |
+          failed=""
+          for d in .; do
+            echo "::group::$d"
+            if ! (
+              set -e
+              cd "$d"
+              flutter pub get
+              # The package's own directories only: platform folders hold
+              # third-party Dart the formatter must not judge.
+              for f in lib test example bin tool; do
+                if [ -d "$f" ]; then
+                  dart format --output=none --set-exit-if-changed "$f"
+                fi
+              done
+              flutter analyze
+              if [ -d test ]; then flutter test; fi
+            ); then
+              failed="${failed} ${d}"
+              echo "::error::${d} failed"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::Failing packages:${failed}"
+            exit 1
+          fi
+          echo "All packages passed"

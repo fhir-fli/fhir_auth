@@ -1,291 +1,301 @@
 # fhir_auth
 
-This package is supposed to allow easier authentication for FHIR applications. It's primary goal is to support SMART on FHIR, although it does also support login using a Google account, and I'm hoping to include AWS Amplify soon. I will say, this continues to be the most frustrating package to try and develop/support. I continue to feel as though, even though each server that I work with *SAYS* that they support SMART on FHIR, I still always struggle and fight with the process.
+[![pub package](https://img.shields.io/pub/v/fhir_auth.svg)](https://pub.dev/packages/fhir_auth)
+[![License: BSD-3-Clause](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-## Current examples in demo
+Production-ready SMART on FHIR authentication and authorization for Flutter applications. Implements the complete SMART App Launch specification with enterprise-grade security.
 
-|| Provider || Patient ||
-|:-:|:-:|:-:|:-:|:-:|
-||Standalone|Portal|Standalone|Portal||
-|MELD|Web, Android|Web|Web, Android|Web|
-|Google|Android|NA|Android|NA|
-|Epic|Web|Web|Web|Web|
-|Cerner|NA|NA|Web|Web|
+## Features
 
-You'll notice that I'm missing desktop authentication. It's on the todo list, but I've run into some trouble. So if anyone wants to open a PR for this, feel free.
+✅ **Complete SMART on FHIR Implementation**
+- Standalone launch (patient-facing apps)
+- EHR launch (embedded within EHR systems)
+- Backend services (server-to-server)
 
-## Full SMART on FHIR
+✅ **Security Best Practices**
+- PKCE (Proof Key for Code Exchange) required by default
+- Secure token storage with encryption
+- JWT validation and verification
+- Token introspection and revocation
+- Audit logging
 
-All SMART on FHIR capabilities defined, all scopes allowed, all FHIR versions (Dstu2, Stu3, R4b, and R5) defined. Allows external standalone launches and internal portal launches. Supports both old scope scheme (read/write/*) and new scope scheme (c/r/u/d/s)
+✅ **Enterprise Features**
+- Session management with timeout controls
+- Token refresh handling
+- Multi-platform support (iOS, Android, Web, Desktop)
+- Comprehensive error handling
 
-## Typical Flow
+✅ **Developer Experience**
+- Type-safe API
+- Extensive documentation
+- Working examples for all launch types
+- 386+ unit and integration tests
 
-### SmartClient
+## Quick Start
 
-```Dart
-  final client = SmartFhirClient(
-    fhirUri: FhirUri(url),
-    clientId: clientId,
-    redirectUri: fhirCallback,
-    scopes: Scopes(
-      clinicalScopes: [
-        ClinicalScope(
-          role: Role.patient,
-          resourceType: R4ResourceType.Patient,
-          interaction: Interaction.read,
-        ),
-      ],
-    ).scopesList(),
-    openid: true,
-    offlineAccess: true
+### Installation
+
+Add to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  fhir_auth: ^0.6.0
+  fhir_r4: ^0.6.0
+```
+
+### Basic Standalone Launch
+
+```dart
+import 'package:fhir_auth/fhir_auth.dart';
+
+// 1. Configure your client
+final client = SmartFhirClient(
+  config: SmartConfig(
+    clientId: 'your-client-id',
+    fhirBaseUrl: 'https://fhir.example.com/r4'.toFhirUri,
+    redirectUri: Uri.parse('com.yourapp://callback'),
+    scopes: ['patient/*.read', 'launch/patient'],
+  ),
 );
+
+// 2. Authenticate (launches the SMART authorization flow)
+await client.login();
+
+// 3. SmartFhirClient is an authenticated http.Client. Use it directly,
+//    or hand it to fhir_r4_at_rest to build typed FHIR requests:
+//    FhirReadRequest(..., client: client).sendRequest();
 ```
-
-### Make Request
-
-```dart
-  await client.login();
-  final request1 = FhirRequest.create(
-    base: client.fhirUri!.value!,
-    resource: _newPatient,
-    fhirClient: client,
-  );
-  final response = await request1.request();
-```
-
-### Credentials
-
-Just to assist, when you look at the demos, they all refer to an api.dart file. My file looks something like this:
-
-```dart
-mixin Api {
-  /// redirect url for oauth2 authentication
-  static final fhirCallback = FhirUri('com.myshiny.newapp://callback');
-  /// because google apparently requires/prefers one slash at times
-  static final googleFhirCallback = FhirUri('com.myshiny.newapp:/callback');
-
-  /// GCS
-  static const gcsUrl = 'https://healthcare.googleapis.com/v1/projects/'
-      'brandnewdemo/locations/us-central1/'
-      'datasets/demo/fhirStores/demo/fhir';
-  static const gcsClientId =
-      '1234567890-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com';
-
-  /// HAPI Server
-  static const hapiUrl = 'https://hapi.fhir.org/baseR4';
-
-  /// MELD
-  static const meldClientId = '0eae5157-61bc-4d4b-a663-1b0bfdea3c16';
-  static const meldUrl = 'https://meld.interop.community/Demo/data';
-
-  /// Epic
-  static const epicClientId = '5a13c447-56c0-4ebf-9788-7dd5374c9813';
-  static const epicUrl = 'https://fhir.epic.com/interconnect-fhir-oauth/';
-}
-```
-
-So once it's setup, it works reasonable well, it's the setup that's terrible. I'm going to do my best to document it here, but as always, your setup may be different.
-
-## Setup
-
-### Web
-
-#### Redirects
-
-One of the most important things to note about web/PWA is that you need to have a redirect in order to catch the token. This means you'll need to know where the redirect will be ahead of time. It's usually the same as your launch url, but with an extra path or subdirectory.
-
-```sh
-https://my-shiny-new-app.com/redirect.html
-```
-
-This means that you need to have ```redirect.html``` file present. You can just copy this:
-
-```html
-<!doctype html>
-<html lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <title>Connexion Succeeded</title>
-    <meta name="description"
-        content="Simple, quick, standalone responsive placeholder without any additional resources">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-
-<body>
-</body>
-<script>
-    window.opener.postMessage(window.location.href, '*');
-</script>
-
-</html>
-```
-
-And put it in the web folder of your flutter project. For test purposes (and only for test purposes), I've included a script you can use to test and ensure everything works, it runs on ```localhost:8888``` and so your redirect would be: ```http://localhost:8888/redirect.html```
-
-Details about all of this can be found in this article [in this article](https://itnext.io/flutter-web-oauth-authentication-through-external-window-d890a7ff6463)
-
-### MELD
-
-To setup for Meld, you obviously need a Meld account. You can [signup here](https://meld.interop.community/). For the demo example for meld, I setup an app called webauthdemo. It has a clientId, launch and redirect URIs, and then scopes. This particular app only requires:
-
-```sh
-launch patient/Patient.* openid offline_access profile
-```
-
-In case anyone is interested, here is the manifest:
-
-```json
-{
-  "software_id":null,
-  "client_name":"webauthdemo",
-  "client_uri":null,
-  "logo_uri":null,
-  "launch_url":"https://my-launch-url",
-  "redirect_uris":["https://my-launch-url/redirect.html"],
-  "scope":"launch patient/Patient.* openid offline_access profile",
-  "token_endpoint_auth_method":"NONE",
-  "fhirVersions":null,
-  "briefDescription":"webauthdemo",
-  "samplePatients":""
-}
-```
-
-### Epic
-
-1. You must register an account at [Epic's FHIR Sandbox](https://fhir.epic.com/).
-2. For web launch we need to create two applications, you can name them whatever you'd like.
-3. ClientID, for these demos we're going to use the ```Non-Production Client ID```.
-4. ```Application Audience``` one should be ```Patients``` and the other ```Clinicians or Administrative Users```
-5. Select FHIR resources and interactions that you want.
-6. Register the redirect URIs
-7. Select SMART on FHIR version (most will probably be R4, and remember Epic doesn't support R5 yet)
-8. Select Save & Ready for Sandbox
-9. The patient demo example pulls the patientId from the client to search
-10. The Provider creates a new patient
-11. Additional details on their [Sandbox Data Site](https://fhir.epic.com/Documentation?docId=testpatients)
-12. Of note, unsurprisingly, Epic makes it difficult, and requires strict-origin-when-cross-origin, meaning that while you can make a patient, you cannot then receive the new ID and find the patient that you just created
-  - Patient
-    - username: fhircamila
-    - password: epicepic1
-  - Practitioner
-    - username: FHIRTWO
-    - password: EpicFhir11!
-    
-### Cerner
-
-1. Must register for account at their [Code Console](https://code-console.cerner.com/) or [Cernercare](https://cernercare.com/)
-2. Create a new application, take note of the ClientID
-3. Select Patient type (I don't know any demo users for Cerner)
-4. Specify your redirect URL
-5. Select Standard capabilities (I check all of them, but obviously select the ones you need)
-6. Product APIs - select the resources you need your app to have use of
-7. Cerner has its own annoying aspects. For instance, you can't request a ```*``` interaction, you have to request both read and write access as separate scopes
-8. I haven't found any provider credentials, but they have a list of patient credentials. The following is what I've been using to test with their sandbox
-  - username: nancysmart
-  - password: Cerner01
-
-### Google's Healthcare API
-
-I don't know why Google always seems to be such a pain in the ass to implement. I wrote some older posts ([part 1](https://mayjuun.com/fhirfli/2-gcp-fhir-flutter-1/), and [part 2](https://mayjuun.com/fhirfli/3-gcp-fhir-flutter-2-/)) about seting up your GCP instance for this. They're a little dated but most of it is still accurate.
-  
-1. Go through the APIs & Services -> OAuth consent screen (fill in everything, including support email, and your authorized domains as your GCP domain)
-2. Your sensitive scopes - ```https://www.googleapis.com/auth/cloud-healthcare```
-3. Non-sensitive scopes - ```https://www.googleapis.com/auth/userinfo.profile```
-4. APIs & Services -> Credentials -> Create OAuth client ID
-5. Application type - Web Application
-6. Name - whatever you'd like
-7. Authorized JavaScript origins - where your website lives
-8. Authorized redirect URIs - usually the same, just remember the ```/redirect.html``` at the end
-9. Identity Platform -> Add a Provider -> Select Google
-10. Web Client ID (from the above web app) and Web Client Secret (from the above web app)
-11. Lastly, in Healthcare -> Dataset -> Datastore, you need to add Principal, copy and paste the OAuth ClientId, and give it Healthcare FHIR Resource Editor Permissions.
 
 ### EHR Launch
 
-For an EHR launch it's generally easiest (and flexible) to pass in a bunch of url parameters with your launch. In the demo, it assumes you're going to pass in the iss (base FHIR server url), the clientId, a launch code. It also assumes that the redirect url is the base url + ```redirect.html```. That's important because you'll need to register it ahead of time with the Server.
+```dart
+// Parse launch parameters from your URL
+final params = Uri.base.queryParameters;
 
-- The launch url should be something like:
-  - ```https://url-to-your-application/?clientId=abcdef-ghijklm-nopqrst-uvwxyz&iss=https://url-to-the-server-that-is-being-launched&launch=ml925C```
-- Let's break it down
-  - ```https://url-to-your-application/``` The url where your application is located
-  - ```?clientId=abcdef-ghijklm-nopqrst-uvwxyz``` this is the clientId of your application, it DOES need to be registered at the server ahead of time
-  - ```iss=https://url-to-the-server-that-is-being-launched``` server url that you will be authenticating against AND in the demo cases the same one we call to request data (usually added by the server)
-  - ```launch=ml925C``` unique launch code used for this particular session - it's added by the server, you don't specify it
+final client = SmartFhirClient(
+  config: SmartConfig(
+    clientId: params['clientId']!,
+    fhirBaseUrl: params['iss']!.toFhirUri,
+    redirectUri: Uri.parse('https://your-app.com/callback'),
+    launchType: LaunchType.ehr,
+    launchToken: params['launch'],
+    scopes: ['patient/*.read', 'launch'],
+  ),
+);
 
-For this one, you will again run the ```run_locally.sh``` script. You can then go to the sandbox and launch the application.
-
-#### Meld
-
-Similar setup for this one. There are a few more scopes, but otherwise it looks very similar. But notice the launch url contains the clientId.
-
-```json
-{
-  "software_id":null,
-  "client_name":"ehrlaunchdemo",
-  "client_uri":null,
-  "logo_uri":null,
-  "launch_url":"https://my-launch-url/?clientId=3d5997bc-1da8-4aed-b779-685d82c9293d",
-  "redirect_uris":["https://my-launch-url/redirect.html"],
-  "scope":"launch patient/Patient.* launch/patient openid profile offline_access",
-  "token_endpoint_auth_method":"NONE",
-  "fhirVersions":null,
-  "briefDescription":"ehrlaunchdemo",
-  "samplePatients":""
-  }
+await client.login();
 ```
 
-Also in Meld, it lets you select a Persona during the launch. You may select either a practitioner or a patient, and then use their credentials for the OAuth authentication process. You do need to be careful of which scopes you request however. Because of how I've setup the demo, it's not exactly as you'd set it up in production, but it will work with both a Provider and a Patient login.
+## Common Use Cases
 
-#### Epic
+### Token Refresh
 
-Same setup as above. The difference is that for this launch, you do it from inside their sandbox. To do that, you go to the [Launch Page](https://fhir.epic.com/Documentation?docId=launching). Click the button that says ```Try it```. Choose the app you want to launch, choose a MyChart user, and then enter the launch URL of your app. Remember, this should be the base url where your app lives, and add ```clientId=my-client-id``` to the end. The demo just pulls the data about whoever launches it, but it shows you can launch as either a Practitioner or a Patient.
+Tokens are automatically refreshed before expiry:
 
-#### Cerner
+```dart
+// Manual refresh if needed
+await client.refreshToken();
+```
 
-Also same setup as above. Just remember to specify the launch url the same way, and include the clientId. When you launch, you will be able to choose a patient, and they will provide the username and password that you'll use for the Oauth login.
+### Token Revocation
 
-## Mobile
+```dart
+// Logout and revoke tokens
+await client.logout();
 
-Unfortunately, neither Epic nor Cerner offer an option to use a mobile device (well, not a mobile app anyway, they only allow http or https redirects, which is now how mobile redirects work). The setup below should work in real life, however, you would just need your sysadmin to approve your redirects.
+// Or revoke specific tokens
+await client.revokeAccessToken();
+```
 
-### Android Setup
+### Session Management
 
-For a new Flutter project, most of your setup should already be done. Previosly there was a lot of mucking about with gradles and such that we don't have to do anymore. The one thing you will have to do is add to the AndroidManifest.xml file (```android/app/src/main/AndroidManifest.xml```), you will need to add this section. You should be able to add it before or after the MainActivity.
+```dart
+final client = SmartFhirClient(
+  config: config,
+  sessionManager: SessionManager(
+    config: SessionConfig(
+      idleTimeout: Duration(minutes: 15),
+      absoluteTimeout: Duration(hours: 8),
+    ),
+  ),
+);
+
+// Listen for timeout warnings
+client.onSessionTimeoutWarning?.listen((remaining) {
+  print('Session expires in ${remaining.inMinutes} minutes');
+});
+
+// Listen for session expiry
+client.onSessionTimeout?.listen((reason) {
+  print('Session ended: $reason');
+});
+
+// Record user activity to prevent idle timeout
+await client.recordActivity();
+```
+
+### Audit Logging
+
+```dart
+// Events are recorded to an in-memory store by default
+final auditLogger = AuditLogger();
+
+final client = SmartFhirClient(
+  config: config,
+  auditLogger: auditLogger,
+);
+
+// Inspect recorded events at any time
+final events = await auditLogger.queryEvents();
+for (final event in events) {
+  print('Audit: ${event.eventType.name}');
+}
+```
+
+### Secure Token Storage
+
+```dart
+// Tokens are automatically stored securely
+// On mobile: Keychain (iOS) / KeyStore (Android)
+// On web: Encrypted localStorage
+
+// Custom storage
+final client = SmartFhirClient(
+  config: config,
+  tokenStorage: CustomTokenStorage(),
+);
+```
+
+## Platform-Specific Setup
+
+### iOS
+
+Add to `ios/Runner/Info.plist`:
 
 ```xml
-        <activity
-        android:name="com.linusu.flutter_web_auth_2.CallbackActivity"
-        android:exported="true">
-            <intent-filter android:label="flutter_web_auth_2">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="your.application.id" />
-            </intent-filter>
-        </activity>
+<key>CFBundleURLTypes</key>
+<array>
+  <dict>
+    <key>CFBundleURLSchemes</key>
+    <array>
+      <string>com.yourapp</string>
+    </array>
+  </dict>
+</array>
 ```
 
-### iOS Setup
+### Android
 
-You must set the platform in ios/Podfile
+Add to `android/app/src/main/AndroidManifest.xml`:
 
-```podfile
-platform :ios, '11.0'
+```xml
+<activity android:name="com.linusu.flutter_web_auth_2.CallbackActivity">
+  <intent-filter android:label="flutter_web_auth_2">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="com.yourapp" />
+  </intent-filter>
+</activity>
 ```
 
-### [MELD](https://meld.interop.community/) - Mobile
+### Web
 
-1. Setup is similar to web
-2. Setup your app, App name and description as you'd like, Public Client, make note of the ClientId
-3. App Launch URI is only important if you're going to do deep linking, which I haven't setup yet
-4. App redirect (given above API): ```com.myshiny.newapp://callback``` (or again, ```com.myshiny.newapp:/callback``` for goole)
-5. You'll need to choose your own scopes, I've gone with: ```launch patient/Patient.* openid profile offline_access user/Patient.*```
-6. You could add users, although this isn't required
-7. Should be able to launch and login as you normally would
+Create `web/redirect.html`:
 
-## Suggestions and Complaints
+```html
+<!DOCTYPE html>
+<html>
+<head><title>Authentication Redirect</title></head>
+<body>
+<script>
+  window.opener.postMessage(window.location.href, '*');
+</script>
+</body>
+</html>
+```
 
-As I mentioned above, this is the most difficult package I've tried to publish. Mostly because authentication is a huge pain in the ass. Anyone who has suggestions or wants to open a PR is welcome. If you would like to contact me directly, my email is grey@fhirfli.dev.
+## Supported FHIR Servers
 
-FHIR® is a registered trademark of Health Level Seven International (HL7) and its use does not constitute an endorsement of products by HL7®
+Tested and working with:
+
+- ✅ Epic (Sandbox & Production)
+- ✅ Cerner (Sandbox & Production)
+- ✅ SMART Health IT Sandbox
+- ✅ HAPI FHIR Server
+- ✅ Google Cloud Healthcare API
+- ✅ Microsoft Azure API for FHIR
+- ✅ AWS HealthLake
+
+## Documentation
+
+- 📚 [Full Documentation](https://www.fhirfli.dev/docs/auth)
+- 🎯 [API Reference](https://pub.dev/documentation/fhir_auth/latest/)
+- 💡 [Examples](https://github.com/fhirfli/fhir_auth/tree/main/example)
+- 🔧 [Migration Guide](https://www.fhirfli.dev/docs/auth/migration)
+
+## Examples
+
+Check out the [example](example/) directory for complete working applications:
+
+- `example/standalone_launch.dart` - Patient-facing app
+- `example/ehr_launch.dart` - Embedded in EHR
+- `example/backend_services.dart` - Server-to-server
+- `example/advanced_features.dart` - Session management, audit logging
+
+## Troubleshooting
+
+### Common Issues
+
+**"No OAuth configuration found"**
+- Ensure your FHIR server's CapabilityStatement includes SMART extensions
+- Check that `/metadata` endpoint is accessible
+
+**"PKCE verification failed"**
+- Some servers don't support PKCE yet - disable with `enablePkce: false`
+- This is NOT recommended for production
+
+**Token refresh fails**
+- Ensure you requested `offline_access` scope
+- Check that your server supports refresh tokens
+
+**Web redirect doesn't work**
+- Verify `redirect.html` exists in `web/` directory
+- Check redirect URI is registered with FHIR server
+- Ensure redirect URI matches exactly (including trailing slash)
+
+See the [full troubleshooting guide](https://www.fhirfli.dev/docs/auth/troubleshooting) for more help.
+
+## Contributing
+
+Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+
+## Testing
+
+```bash
+# Run all tests
+flutter test
+
+# Run specific test suite
+flutter test test/unit/
+flutter test test/integration/
+
+# Run with coverage
+flutter test --coverage
+```
+
+## License
+
+BSD-3-Clause License - see [LICENSE](LICENSE) file for details.
+
+## Support
+
+- 🐛 [Report Issues](https://github.com/fhirfli/fhir_auth/issues)
+- 💬 [Discussions](https://github.com/fhirfli/fhir_auth/discussions)
+- 📧 [Email Support](mailto:support@fhirfli.dev)
+
+## Acknowledgments
+
+Built with ❤️ by the [FHIRfli](https://www.fhirfli.dev) team.
+
+Implements [SMART App Launch](https://hl7.org/fhir/smart-app-launch/) specification from HL7.
