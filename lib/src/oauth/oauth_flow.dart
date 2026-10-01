@@ -226,6 +226,32 @@ class OAuthFlow {
     return exchangeCodeForToken(code);
   }
 
+  /// Reports a token endpoint's non-200 answer: an [AuthorizationException]
+  /// carrying the OAuth error and description when the body is the JSON
+  /// error object RFC 6749 section 5.2 defines, a [NetworkException] when
+  /// it is not JSON. Token exchange, refresh and the client-credentials
+  /// grant each carried this block until 2026-10-01.
+  Never _tokenFailure(String what, http.Response response) {
+    _logger.severe('$what: ${response.statusCode}');
+    final Map<String, dynamic> error;
+    try {
+      error = jsonDecode(response.body) as Map<String, dynamic>;
+    } on FormatException {
+      throw NetworkException(
+        what,
+        statusCode: response.statusCode,
+        details: response.body,
+      );
+    }
+    throw AuthorizationException(
+      what,
+      statusCode: response.statusCode,
+      errorCode: error[OAuthParameters.error] as String?,
+      errorDescription: error[OAuthParameters.errorDescription] as String?,
+      details: response.body,
+    );
+  }
+
   /// Exchange authorization code for access token (with rate limiting)
   Future<SmartTokenResponse> exchangeCodeForToken(String code) async {
     _logger.fine('Exchanging authorization code for token');
@@ -276,26 +302,7 @@ class OAuthFlow {
         .timeout(networkTimeout);
 
     if (response.statusCode != 200) {
-      _logger.severe('Token exchange failed: ${response.statusCode}');
-
-      // Try to parse error response
-      try {
-        final error = jsonDecode(response.body) as Map<String, dynamic>;
-        throw AuthorizationException(
-          'Token exchange failed',
-          statusCode: response.statusCode,
-          errorCode: error[OAuthParameters.error] as String?,
-          errorDescription: error[OAuthParameters.errorDescription] as String?,
-          details: response.body,
-        );
-      } catch (e) {
-        if (e is AuthorizationException) rethrow;
-        throw NetworkException(
-          'Token exchange failed',
-          statusCode: response.statusCode,
-          details: response.body,
-        );
-      }
+      _tokenFailure('Token exchange failed', response);
     }
 
     // Parse token response
@@ -358,25 +365,7 @@ class OAuthFlow {
         .timeout(networkTimeout);
 
     if (response.statusCode != 200) {
-      _logger.severe('Token refresh failed: ${response.statusCode}');
-
-      try {
-        final error = jsonDecode(response.body) as Map<String, dynamic>;
-        throw AuthorizationException(
-          'Token refresh failed',
-          statusCode: response.statusCode,
-          errorCode: error[OAuthParameters.error] as String?,
-          errorDescription: error[OAuthParameters.errorDescription] as String?,
-          details: response.body,
-        );
-      } catch (e) {
-        if (e is AuthorizationException) rethrow;
-        throw NetworkException(
-          'Token refresh failed',
-          statusCode: response.statusCode,
-          details: response.body,
-        );
-      }
+      _tokenFailure('Token refresh failed', response);
     }
 
     final responseData = jsonDecode(response.body) as Map<String, dynamic>;
@@ -442,25 +431,7 @@ class OAuthFlow {
         .timeout(networkTimeout);
 
     if (response.statusCode != 200) {
-      _logger.severe('Client credentials grant failed: ${response.statusCode}');
-
-      try {
-        final error = jsonDecode(response.body) as Map<String, dynamic>;
-        throw AuthorizationException(
-          'Client credentials grant failed',
-          statusCode: response.statusCode,
-          errorCode: error[OAuthParameters.error] as String?,
-          errorDescription: error[OAuthParameters.errorDescription] as String?,
-          details: response.body,
-        );
-      } catch (e) {
-        if (e is AuthorizationException) rethrow;
-        throw NetworkException(
-          'Client credentials grant failed',
-          statusCode: response.statusCode,
-          details: response.body,
-        );
-      }
+      _tokenFailure('Client credentials grant failed', response);
     }
 
     final responseData = jsonDecode(response.body) as Map<String, dynamic>;
