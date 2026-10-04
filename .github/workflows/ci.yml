@@ -22,18 +22,20 @@ jobs:
           for d in .; do
             echo "::group::$d"
             if ! (
-              set -e
-              cd "$d"
-              flutter pub get
+              # No `set -e` here: bash ignores errexit inside an `if` condition,
+              # subshell included, so only the last command counted and a format
+              # or analyze failure passed (found 2026-10-04). Each step exits.
+              cd "$d" || exit 1
+              flutter pub get || exit 1
               # The package's own directories only: platform folders hold
               # third-party Dart the formatter must not judge.
               for f in lib test example bin tool; do
                 if [ -d "$f" ]; then
-                  dart format --output=none --set-exit-if-changed "$f"
+                  dart format --output=none --set-exit-if-changed "$f" || exit 1
                 fi
               done
-              flutter analyze
-              if [ -d test ]; then flutter test; fi
+              flutter analyze || exit 1
+              if [ -d test ]; then flutter test || exit 1; fi
             ); then
               failed="${failed} ${d}"
               echo "::error::${d} failed"
