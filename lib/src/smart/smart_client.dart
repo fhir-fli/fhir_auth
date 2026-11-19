@@ -14,14 +14,22 @@ import 'package:fhir_auth/fhir_auth.dart'
         BackendServiceConfig,
         ConfigurationException,
         FhirAuthClient,
+        FhirAuthException,
         JwtValidator,
+        KeyValueStore,
         NetworkException,
         OAuthFlow,
+        OAuthParameters,
+        PendingRedirectLogin,
+        RedirectTabRecord,
+        SecurityException,
+        SecurityViolationType,
         Session,
         SessionManager,
         SmartCapability,
         SmartConfig,
         SmartTokenResponse,
+        TabTokenStorage,
         TimeoutReason,
         TokenIntrospector,
         WebAuthenticator,
@@ -215,29 +223,22 @@ class SmartFhirClient extends FhirAuthClient {
         responseUrl.queryParameters,
       );
 
-      // Store tokens and context
-      await storeTokens(tokens);
+      await _finishLogin(tokens);
+    } on Object catch (e, stackTrace) {
+      await _loginFailed(e, stackTrace);
+    }
+  }
 
-      // Start session
-      if (_sessionManager != null) {
-        await _sessionManager.startSession(
-          userId: tokens.fhirUser ?? 'unknown',
-          metadata: <String, dynamic>{
-            'scopes': tokens.scopesList,
-            if (tokens.patientContext != null)
-              'patient_context': tokens.patientContext,
-            if (tokens.encounterContext != null)
-              'encounter_context': tokens.encounterContext,
-          },
-        );
-      }
+  /// Store [tokens], start the session and audit the login.
+  Future<void> _finishLogin(SmartTokenResponse tokens) async {
+    // Store tokens and context
+    await storeTokens(tokens);
 
-      _logger.fine('SMART login successful');
-
-      // Audit: log successful authentication
-      await _auditLogger?.logAuthenticationSuccess(
+    // Start session
+    if (_sessionManager != null) {
+      await _sessionManager.startSession(
         userId: tokens.fhirUser ?? 'unknown',
-        details: <String, dynamic>{
+        metadata: <String, dynamic>{
           'scopes': tokens.scopesList,
           if (tokens.patientContext != null)
             'patient_context': tokens.patientContext,
@@ -245,36 +246,302 @@ class SmartFhirClient extends FhirAuthClient {
             'encounter_context': tokens.encounterContext,
         },
       );
+    }
 
-      // Audit: log token issued
-      await _auditLogger?.logTokenIssued(
-        userId: tokens.fhirUser,
-        scopes: tokens.scopesList,
-      );
-    } catch (e, stackTrace) {
-      _logger.severe('SMART login failed', e, stackTrace);
+    _logger.fine('SMART login successful');
 
-      // Audit: log authentication failure
-      await _auditLogger?.logAuthenticationFailure(
-        reason: e.toString(),
-        errorCode:
-            e is AuthenticationException
-                ? 'authentication_failed'
-                : 'unknown_error',
-      );
+    // Audit: log successful authentication
+    await _auditLogger?.logAuthenticationSuccess(
+      userId: tokens.fhirUser ?? 'unknown',
+      details: <String, dynamic>{
+        'scopes': tokens.scopesList,
+        if (tokens.patientContext != null)
+          'patient_context': tokens.patientContext,
+        if (tokens.encounterContext != null)
+          'encounter_context': tokens.encounterContext,
+      },
+    );
 
-      if (e is AuthenticationException) {
-        rethrow;
+    // Audit: log token issued
+    await _auditLogger?.logTokenIssued(
+      userId: tokens.fhirUser,
+      scopes: tokens.scopesList,
+    );
+  }
+
+  /// Log and audit a failed login, then throw: [e] itself, with its stack
+  /// trace, when it is one of [keep]; otherwise an [AuthenticationException]
+  /// wrapping it. [login] keeps only [AuthenticationException]s.
+  Future<Never> _loginFailed(
+    Object e,
+    StackTrace stackTrace, {
+    bool Function(Object e) keep = _isAuthenticationException,
+  }) async {
+    _logger.severe('SMART login failed', e, stackTrace);
+
+    // Audit: log authentication failure
+    await _auditLogger?.logAuthenticationFailure(
+      reason: e.toString(),
+      errorCode:
+          e is AuthenticationException
+              ? 'authentication_failed'
+              : 'unknown_error',
+    );
+
+    if (keep(e)) Error.throwWithStackTrace(e, stackTrace);
+
+    throw AuthenticationException(
+      'SMART authentication failed',
+      details: e.toString(),
+      innerException: e,
+      stackTrace: stackTrace,
+    );
+  }
+
+  /// How long a same-window login may take, from leaving for the
+  /// authorization server to coming back. The same ten minutes
+  /// [StateManager] gives a `state` by default.
+  static const Duration redirectLoginLifetime = Duration(minutes: 10);
+
+  /// Prefix of every same-window login record in session storage. Tokens
+  /// live under a different prefix ([TabTokenStorage]), so no `state` can
+  /// make a token entry read as a login record.
+  static const String _redirectLoginPrefix = 'fhir_auth.login.';
+
+  /// The session-storage key of the login record whose OAuth `state` is
+  /// [tabKey].
+  static String redirectTabKey(String tabKey) => '$_redirectLoginPrefix$tabKey';
+
+  /// Remove the records of logins started more than [redirectLoginLifetime]
+  /// ago that never came back (the user closed the tab at the sign-in page).
+  /// Their secrets would otherwise stay in session storage, which Hyperspace
+  /// shares across tabs, until the browser session ends. Finished logins
+  /// hold no secrets and are kept: their tabs may still be open.
+  static void _forgetAbandonedLogins(KeyValueStore store, DateTime now) {
+    for (final key in store.keys.toList()) {
+      if (!key.startsWith(_redirectLoginPrefix)) continue;
+      final pending = _readRecord(store, key)?.pending;
+      if (pending != null &&
+          now.isAfter(pending.startedAt.add(redirectLoginLifetime))) {
+        store.remove(key);
       }
+    }
+  }
 
-      throw AuthenticationException(
-        'SMART authentication failed',
-        details: e.toString(),
-        innerException: e,
-        stackTrace: stackTrace,
+  /// The login record stored under [key], or null when there is none or it
+  /// cannot be read (an unreadable record is removed).
+  static RedirectTabRecord? _readRecord(KeyValueStore store, String key) {
+    final saved = store.read(key);
+    if (saved == null) return null;
+    try {
+      return RedirectTabRecord.fromJson(
+        jsonDecode(saved) as Map<String, dynamic>,
+      );
+    } on Object {
+      store.remove(key);
+      return null;
+    }
+  }
+
+  /// Start a same-window login: the first half of [login] for a web app
+  /// that must not open a popup or a new tab, such as one embedded in an EHR
+  /// (Epic Hyperspace shows apps in an iframe in the patient chart).
+  ///
+  /// Saves this login's `state`, `nonce` and PKCE code verifier in [store]
+  /// (in a browser, `currentBrowserWindow().sessionStorage`) under a key made
+  /// from the `state`, and returns the authorization URL. The caller then
+  /// sends the window there (`currentBrowserWindow().assign(url)`); the
+  /// page unloads. When the authorization server sends the browser back to
+  /// the redirect URI, call [completeRedirectLogin] there.
+  ///
+  /// The `state` doubles as the tab's id. Epic's "Embedding in Multiple
+  /// Tabs" (fhir.epic.com/Documentation, read 2026-11-19) asks for a tab id
+  /// in the URL because Hyperspace shares session storage across tabs; the
+  /// `state` comes back in the redirect URL and stays there. The SMART
+  /// Health IT reference client does the same (fhirclient 2.5.4,
+  /// lib/smart.js `ready()`: without `fullSessionStorageSupport` it "MUST
+  /// keep the `state` url parameter").
+  ///
+  /// Only public clients: a browser app cannot keep a client secret, and
+  /// the secret would otherwise have to wait in session storage.
+  Future<Uri> beginRedirectLogin({
+    required KeyValueStore store,
+    DateTime Function() now = DateTime.now,
+  }) async {
+    final sc = smartConfig;
+    if (sc == null) {
+      throw const ConfigurationException(
+        'A same-window login is for SMART user logins, not backend services',
+        configurationField: 'config',
+      );
+    }
+    if (!sc.isPublicClient || sc.clientSecret != null) {
+      throw const ConfigurationException(
+        'A same-window login is for public clients: a browser app cannot '
+        'keep a client secret',
+        configurationField: 'clientSecret',
+      );
+    }
+
+    await _auditLogger?.logAuthenticationAttempt(userId: 'unknown');
+    _forgetAbandonedLogins(store, now());
+
+    final oauthFlow = await _getOAuthFlow();
+    final authUrl = oauthFlow.buildAuthorizationUrl(
+      extraParameters: sc.customParameters,
+    );
+    final secrets = oauthFlow.pendingSecrets;
+
+    // The configuration as it will be needed on the way back: with the
+    // endpoints discovery found, so finishing needs no second discovery.
+    final configJson =
+        sc.toJson()
+          ..['authorizeUrl'] = oauthFlow.authorizationEndpoint.toString()
+          ..['tokenUrl'] = oauthFlow.tokenEndpoint.toString();
+    final record = RedirectTabRecord(
+      config: SmartConfig.fromJson(configJson),
+      jwksUri: _jwksUri,
+      issuer: _issuer,
+      revocationEndpoint: _revocationEndpoint,
+      introspectionEndpoint: _introspectionEndpoint,
+      pending: PendingRedirectLogin(
+        startedAt: now(),
+        nonce: secrets.nonce,
+        codeVerifier: secrets.codeVerifier,
+      ),
+    );
+    store.write(redirectTabKey(secrets.state), jsonEncode(record.toJson()));
+
+    _logger.fine('Same-window login started');
+    return authUrl;
+  }
+
+  /// Finish a same-window login started by [beginRedirectLogin], or, when
+  /// this tab's login already finished, rebuild its client after a reload.
+  /// Call it every time the redirect-URI page loads, with that page's
+  /// address as [callbackUrl] and the same [store].
+  ///
+  /// The tab is the one named by the `state` in [callbackUrl]. Its tokens
+  /// are kept in [store] under that tab's keys ([TabTokenStorage]), so two
+  /// tabs open on two patients never read each other's tokens.
+  ///
+  /// SMART App Launch STU2.2 (hl7.org/fhir/smart-app-launch/STU2.2/
+  /// app-launch.html, "Obtain authorization code", read 2026-11-19): "The
+  /// app SHALL validate the value of the state parameter upon return to the
+  /// redirect URL" and "SHALL ensure that the state value is securely tied
+  /// to the user's current session". A `state` this browser session did not
+  /// write to [store] is refused, as is one older than
+  /// [redirectLoginLifetime]. A started login can be finished once: its
+  /// secrets are deleted before the code is exchanged.
+  ///
+  /// Afterwards, show the address without its `code`
+  /// (`currentBrowserWindow().replaceUrl(redirectCallbackUrlToKeep(url))`) so
+  /// a reload does not offer the spent code again; keep the `state`, which
+  /// is the tab's id.
+  static Future<SmartFhirClient> completeRedirectLogin({
+    required Uri callbackUrl,
+    required KeyValueStore store,
+    http.Client? httpClient,
+    AuditLogger? auditLogger,
+    SessionManager? sessionManager,
+    Logger? logger,
+    DateTime Function() now = DateTime.now,
+  }) async {
+    final params = callbackUrl.queryParameters;
+    final state = params[OAuthParameters.state];
+    if (state == null) {
+      throw const SecurityException(
+        'Missing state parameter in authorization response',
+        securityViolationType: SecurityViolationType.stateMismatch,
+      );
+    }
+    final key = redirectTabKey(state);
+    final record = _readRecord(store, key);
+    if (record == null) {
+      throw const SecurityException(
+        'Invalid state parameter - possible CSRF attack',
+        details: 'No login with this state was started in this browser session',
+        securityViolationType: SecurityViolationType.stateMismatch,
+      );
+    }
+
+    final client =
+        SmartFhirClient(
+            config: record.config,
+            httpClient: httpClient,
+            auditLogger: auditLogger,
+            sessionManager: sessionManager,
+            logger: logger,
+            tokenStorage: TabTokenStorage(store: store, tabKey: state),
+          )
+          .._jwksUri = record.jwksUri
+          .._issuer = record.issuer
+          .._revocationEndpoint = record.revocationEndpoint
+          .._introspectionEndpoint = record.introspectionEndpoint;
+
+    final pending = record.pending;
+    if (pending == null) {
+      // This tab's login finished earlier; the page has been reloaded.
+      final tokens = await client.getStoredTokens();
+      if (tokens == null) {
+        throw const AuthenticationException(
+          'This tab is no longer signed in; launch the app again',
+        );
+      }
+      client._cachedSmartTokens = tokens;
+      return client;
+    }
+
+    // One use only: the secrets go before anything else can fail.
+    store.write(key, jsonEncode(record.withoutPending().toJson()));
+
+    try {
+      if (now().isAfter(pending.startedAt.add(redirectLoginLifetime))) {
+        throw const SecurityException(
+          'Expired state parameter',
+          details: 'The login took longer than the time allowed',
+          securityViolationType: SecurityViolationType.stateMismatch,
+        );
+      }
+      final oauthFlow =
+          await client._getOAuthFlow()
+            ..resumeAuthorization(
+              state: state,
+              nonce: pending.nonce,
+              codeVerifier: pending.codeVerifier,
+            );
+      final tokens = await oauthFlow.handleAuthorizationResponse(params);
+      await client._finishLogin(tokens);
+      return client;
+    } on Object catch (e, stackTrace) {
+      // The code is spent whatever failed, so the tab keeps nothing: no
+      // record, and no tokens if they were stored before the failure.
+      store.remove(key);
+      await client.tokenStorage.clearTokens();
+      client.clearInMemoryTokens();
+      // The caller must be able to tell a forged or expired state
+      // (SecurityException) from a refused consent or code
+      // (AuthorizationException), so every FhirAuthException is kept.
+      await client._loginFailed(
+        e,
+        stackTrace,
+        keep: (e) => e is FhirAuthException,
       );
     }
   }
+
+  /// [callbackUrl] without the one-time authorization `code` (RFC 6749
+  /// section 4.1.2), keeping everything else, including the `state` that
+  /// names the tab.
+  static Uri redirectCallbackUrlToKeep(Uri callbackUrl) {
+    final kept = Map<String, List<String>>.of(
+      callbackUrl.queryParametersAll,
+    )..remove(OAuthParameters.code);
+    return callbackUrl.replace(queryParameters: kept.isEmpty ? null : kept);
+  }
+
+  static bool _isAuthenticationException(Object e) =>
+      e is AuthenticationException;
 
   /// Perform backend service login using JWT client assertion
   Future<void> _performBackendServiceLogin() async {

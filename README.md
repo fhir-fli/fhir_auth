@@ -75,16 +75,50 @@ final params = Uri.base.queryParameters;
 final client = SmartFhirClient(
   config: SmartConfig(
     clientId: params['clientId']!,
-    fhirBaseUrl: params['iss']!.toFhirUri,
+    fhirBaseUrl: Uri.parse(params['iss']!),
     redirectUri: Uri.parse('https://your-app.com/callback'),
     launchType: LaunchType.ehr,
     launchToken: params['launch'],
-    scopes: ['patient/*.read', 'launch'],
+    scopes: ['patient/*.read'], // an EHR launch adds the `launch` scope
   ),
 );
 
 await client.login();
 ```
+
+### EHR Launch Inside the EHR Window (web)
+
+`login()` on the web opens the authorization page in a new window. An app
+embedded in the EHR (Epic shows SMART apps in an iframe in the patient chart)
+must stay in its own frame, so it logs in with a same-window redirect in two
+halves:
+
+```dart
+final window = currentBrowserWindow();
+
+// Launch page (the EHR opened it with ?iss=...&launch=...):
+final url = await SmartFhirClient(config: config).beginRedirectLogin(
+  store: window.sessionStorage,
+);
+window.assign(url); // the page unloads
+
+// Redirect-URI page, on every load (first arrival and any reload):
+final client = await SmartFhirClient.completeRedirectLogin(
+  callbackUrl: window.location,
+  store: window.sessionStorage,
+);
+window.replaceUrl(
+  SmartFhirClient.redirectCallbackUrlToKeep(window.location),
+);
+final patientId = (await client.getStoredTokens())?.patientContext;
+```
+
+The login's `state` names the tab and stays in the address, and each tab's
+tokens are stored under it, so two chart tabs open on two patients never share
+tokens (Epic's "Embedding in Multiple Tabs" guidance: its browser does not keep
+session storage apart per tab). Only public clients are allowed. A `state`
+this browser session did not start, or one older than ten minutes, is refused,
+and a code is exchanged once.
 
 ## Common Use Cases
 

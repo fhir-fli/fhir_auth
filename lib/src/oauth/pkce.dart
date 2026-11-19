@@ -116,6 +116,18 @@ class PkceManager {
     _codeChallenge = null;
   }
 
+  /// Put back a code verifier made before the page was left for the
+  /// authorization server, so the token request can send it (RFC 7636
+  /// section 4.5). Throws [ArgumentError] when [verifier] is not a valid
+  /// code verifier (section 4.1: 43 to 128 unreserved characters).
+  void restore(String verifier) {
+    if (!isValidCodeVerifier(verifier)) {
+      throw ArgumentError.value(verifier, 'verifier', 'not a code verifier');
+    }
+    _codeVerifier = verifier;
+    _codeChallenge = null;
+  }
+
   /// Create PKCE parameters for authorization request
   Map<String, String> toAuthorizationParameters() {
     return {

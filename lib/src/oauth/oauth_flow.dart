@@ -151,6 +151,9 @@ class OAuthFlow {
 
     // Generate security parameters
     _currentState = state ?? _stateManager.generateState();
+    // RFC 7636 section 4.1: the client creates a code verifier "for each
+    // OAuth 2.0 Authorization Request"; two requests never share one.
+    _pkceManager.reset();
     _currentNonce =
         enableOpenId ? (nonce ?? _stateManager.generateNonce()) : null;
 
@@ -177,6 +180,38 @@ class OAuthFlow {
     _logger.fine('Authorization URL: $sanitizedUrl');
 
     return url;
+  }
+
+  /// The secrets of the authorization request [buildAuthorizationUrl] made
+  /// last: its `state`, its OpenID `nonce`, and its PKCE code verifier.
+  ///
+  /// A same-window redirect leaves the page, so these are saved before it
+  /// and handed to [resumeAuthorization] on the way back. Throws
+  /// [StateError] before any authorization URL has been built.
+  ({String state, String? nonce, String? codeVerifier}) get pendingSecrets {
+    final state = _currentState;
+    if (state == null) {
+      throw StateError('No authorization URL has been built');
+    }
+    return (
+      state: state,
+      nonce: _currentNonce,
+      codeVerifier: enablePkce ? _pkceManager.codeVerifier : null,
+    );
+  }
+
+  /// Restore the secrets [pendingSecrets] gave, after the page came back
+  /// from the authorization server, so [handleAuthorizationResponse] checks
+  /// `state` and the `nonce` against them and the token request sends the
+  /// same code verifier.
+  void resumeAuthorization({
+    required String state,
+    String? nonce,
+    String? codeVerifier,
+  }) {
+    _currentState = state;
+    _currentNonce = nonce;
+    if (codeVerifier != null) _pkceManager.restore(codeVerifier);
   }
 
   /// Handle authorization response and exchange code for tokens
