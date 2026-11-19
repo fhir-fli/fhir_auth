@@ -15,8 +15,10 @@ void main() {
     expect(store.read(key), isNull);
     store.write(key, 'value');
     expect(store.read(key), 'value');
+    expect(store.keys, contains(key));
     store.remove(key);
     expect(store.read(key), isNull);
+    expect(store.keys, isNot(contains(key)));
   });
 
   test('replaceUrl changes the address without leaving the page', () {

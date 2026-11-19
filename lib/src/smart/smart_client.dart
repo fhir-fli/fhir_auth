@@ -303,9 +303,45 @@ class SmartFhirClient extends FhirAuthClient {
   /// [StateManager] gives a `state` by default.
   static const Duration redirectLoginLifetime = Duration(minutes: 10);
 
-  /// The session-storage key of the tab whose login used OAuth `state`
+  /// Prefix of every same-window login record in session storage. Tokens
+  /// live under a different prefix ([TabTokenStorage]), so no `state` can
+  /// make a token entry read as a login record.
+  static const String _redirectLoginPrefix = 'fhir_auth.login.';
+
+  /// The session-storage key of the login record whose OAuth `state` is
   /// [tabKey].
-  static String redirectTabKey(String tabKey) => 'fhir_auth.tab.$tabKey';
+  static String redirectTabKey(String tabKey) => '$_redirectLoginPrefix$tabKey';
+
+  /// Remove the records of logins started more than [redirectLoginLifetime]
+  /// ago that never came back (the user closed the tab at the sign-in page).
+  /// Their secrets would otherwise stay in session storage, which Hyperspace
+  /// shares across tabs, until the browser session ends. Finished logins
+  /// hold no secrets and are kept: their tabs may still be open.
+  static void _forgetAbandonedLogins(KeyValueStore store, DateTime now) {
+    for (final key in store.keys.toList()) {
+      if (!key.startsWith(_redirectLoginPrefix)) continue;
+      final pending = _readRecord(store, key)?.pending;
+      if (pending != null &&
+          now.isAfter(pending.startedAt.add(redirectLoginLifetime))) {
+        store.remove(key);
+      }
+    }
+  }
+
+  /// The login record stored under [key], or null when there is none or it
+  /// cannot be read (an unreadable record is removed).
+  static RedirectTabRecord? _readRecord(KeyValueStore store, String key) {
+    final saved = store.read(key);
+    if (saved == null) return null;
+    try {
+      return RedirectTabRecord.fromJson(
+        jsonDecode(saved) as Map<String, dynamic>,
+      );
+    } on Object {
+      store.remove(key);
+      return null;
+    }
+  }
 
   /// Start a same-window login: the first half of [login] for a web app
   /// that must not open a popup or a new tab, such as one embedded in an EHR
@@ -348,6 +384,7 @@ class SmartFhirClient extends FhirAuthClient {
     }
 
     await _auditLogger?.logAuthenticationAttempt(userId: 'unknown');
+    _forgetAbandonedLogins(store, now());
 
     final oauthFlow = await _getOAuthFlow();
     final authUrl = oauthFlow.buildAuthorizationUrl(
@@ -419,17 +456,14 @@ class SmartFhirClient extends FhirAuthClient {
       );
     }
     final key = redirectTabKey(state);
-    final saved = store.read(key);
-    if (saved == null) {
+    final record = _readRecord(store, key);
+    if (record == null) {
       throw const SecurityException(
         'Invalid state parameter - possible CSRF attack',
         details: 'No login with this state was started in this browser session',
         securityViolationType: SecurityViolationType.stateMismatch,
       );
     }
-    final record = RedirectTabRecord.fromJson(
-      jsonDecode(saved) as Map<String, dynamic>,
-    );
 
     final client =
         SmartFhirClient(
@@ -480,7 +514,11 @@ class SmartFhirClient extends FhirAuthClient {
       await client._finishLogin(tokens);
       return client;
     } on Object catch (e, stackTrace) {
+      // The code is spent whatever failed, so the tab keeps nothing: no
+      // record, and no tokens if they were stored before the failure.
       store.remove(key);
+      await client.tokenStorage.clearTokens();
+      client.clearInMemoryTokens();
       // The caller must be able to tell a forged or expired state
       // (SecurityException) from a refused consent or code
       // (AuthorizationException), so every FhirAuthException is kept.

@@ -28,6 +28,15 @@ class _SessionStorage implements KeyValueStore {
   const _SessionStorage();
 
   @override
+  Iterable<String> get keys {
+    final storage = web.window.sessionStorage;
+    return [
+      for (var i = 0; i < storage.length; i++)
+        if (storage.key(i) case final key?) key,
+    ];
+  }
+
+  @override
   String? read(String key) => web.window.sessionStorage.getItem(key);
 
   @override

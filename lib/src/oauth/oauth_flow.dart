@@ -151,6 +151,9 @@ class OAuthFlow {
 
     // Generate security parameters
     _currentState = state ?? _stateManager.generateState();
+    // RFC 7636 section 4.1: the client creates a code verifier "for each
+    // OAuth 2.0 Authorization Request"; two requests never share one.
+    _pkceManager.reset();
     _currentNonce =
         enableOpenId ? (nonce ?? _stateManager.generateNonce()) : null;
 

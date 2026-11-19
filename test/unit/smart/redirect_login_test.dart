@@ -24,6 +24,7 @@ import 'package:crypto/crypto.dart';
 import 'package:fhir_auth/fhir_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:jose/jose.dart';
 import 'package:test/test.dart';
 
 final Uri _authorize = Uri.parse('https://ehr.example.org/oauth2/authorize');
@@ -452,4 +453,203 @@ void main() {
     await b.clearTokens();
     expect(await a.hasTokens(), isTrue);
   });
+
+  group('found in review, 2026-11-19', () {
+    /// A token endpoint that also returns an id_token with [nonce].
+    http.Client idTokenEndpoint(String nonce) => MockClient((request) async {
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final idToken =
+          (JsonWebSignatureBuilder()
+                ..jsonContent = {
+                  'iss': 'https://ehr.example.org',
+                  'sub': 'clinician-1',
+                  'aud': 'cicada-client',
+                  'exp': now + 3600,
+                  'iat': now,
+                  'nonce': nonce,
+                }
+                ..addRecipient(
+                  JsonWebKey.generate('RS256', keyBitLength: 2048),
+                  algorithm: 'RS256',
+                ))
+              .build()
+              .toCompactSerialization();
+      return http.Response(
+        jsonEncode({
+          'access_token': 'at',
+          'token_type': 'Bearer',
+          'expires_in': 3600,
+          'id_token': idToken,
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    Future<(MemoryKeyValueStore, String, String)> started() async {
+      final store = MemoryKeyValueStore();
+      final url = await SmartFhirClient(
+        config: _ehrLaunch(),
+      ).beginRedirectLogin(store: store);
+      return (
+        store,
+        url.queryParameters['state']!,
+        url.queryParameters['nonce']!,
+      );
+    }
+
+    test('the id_token must carry the nonce this login sent', () async {
+      final (store, state, nonce) = await started();
+      final client = await SmartFhirClient.completeRedirectLogin(
+        callbackUrl: _redirect.replace(
+          queryParameters: {'code': 'c', 'state': state},
+        ),
+        store: store,
+        httpClient: idTokenEndpoint(nonce),
+      );
+      expect(await client.getAccessToken(), 'at');
+    });
+
+    test(
+      'an id_token with another nonce is refused and nothing is kept',
+      () async {
+        final (store, state, _) = await started();
+        await expectLater(
+          SmartFhirClient.completeRedirectLogin(
+            callbackUrl: _redirect.replace(
+              queryParameters: {'code': 'c', 'state': state},
+            ),
+            store: store,
+            httpClient: idTokenEndpoint('not-the-nonce'),
+          ),
+          throwsA(isA<SecurityException>()),
+        );
+        expect(store.keys, isEmpty);
+      },
+    );
+
+    test('each login on one client gets its own code verifier', () async {
+      final store = MemoryKeyValueStore();
+      final client = SmartFhirClient(config: _ehrLaunch());
+      final first = await client.beginRedirectLogin(store: store);
+      final second = await client.beginRedirectLogin(store: store);
+      expect(
+        first.queryParameters['code_challenge'],
+        isNot(second.queryParameters['code_challenge']),
+      );
+    });
+
+    test(
+      'a failure after the tokens were stored leaves no tokens behind',
+      () async {
+        final (store, state, _) = await started();
+        await expectLater(
+          SmartFhirClient.completeRedirectLogin(
+            callbackUrl: _redirect.replace(
+              queryParameters: {'code': 'c', 'state': state},
+            ),
+            store: store,
+            httpClient: _TokenEndpoint().client,
+            auditLogger: _FailingAuditLogger(),
+          ),
+          throwsA(isA<AuthenticationException>()),
+        );
+        expect(store.keys, isEmpty);
+      },
+    );
+
+    test('a state naming a token entry is not read as a login', () async {
+      final store = MemoryKeyValueStore();
+      final url = await SmartFhirClient(
+        config: _ehrLaunch(),
+      ).beginRedirectLogin(store: store);
+      final state = url.queryParameters['state']!;
+      await SmartFhirClient.completeRedirectLogin(
+        callbackUrl: _redirect.replace(
+          queryParameters: {'code': 'c', 'state': state},
+        ),
+        store: store,
+        httpClient: _TokenEndpoint().client,
+      );
+      expect(
+        store.keys,
+        contains(TabTokenStorage(store: store, tabKey: state).tokensKey),
+      );
+
+      // Under the first layout a login record and a token entry shared
+      // one prefix, so this state read the tokens as a login record.
+      await expectLater(
+        SmartFhirClient.completeRedirectLogin(
+          callbackUrl: _redirect.replace(
+            queryParameters: {'code': 'c', 'state': '$state.tokens'},
+          ),
+          store: store,
+        ),
+        throwsA(isA<SecurityException>()),
+      );
+    });
+
+    test('an unreadable login record is refused as an unknown state', () async {
+      final store =
+          MemoryKeyValueStore()
+            ..write(SmartFhirClient.redirectTabKey('s'), 'not json');
+      await expectLater(
+        SmartFhirClient.completeRedirectLogin(
+          callbackUrl: _redirect.replace(
+            queryParameters: {'code': 'c', 'state': 's'},
+          ),
+          store: store,
+        ),
+        throwsA(isA<SecurityException>()),
+      );
+      expect(store.keys, isEmpty);
+    });
+
+    test('starting a login forgets logins abandoned at the sign-in page, and '
+        'keeps finished tabs and recent logins', () async {
+      final store = MemoryKeyValueStore();
+      final t0 = DateTime.utc(2026, 11, 19, 12);
+      Future<String> begin(DateTime at) async =>
+          (await SmartFhirClient(
+            config: _ehrLaunch(),
+          ).beginRedirectLogin(
+            store: store,
+            now: () => at,
+          )).queryParameters['state']!;
+
+      final abandoned = await begin(t0);
+      final finished = await begin(t0);
+      await SmartFhirClient.completeRedirectLogin(
+        callbackUrl: _redirect.replace(
+          queryParameters: {'code': 'c', 'state': finished},
+        ),
+        store: store,
+        httpClient: _TokenEndpoint().client,
+        now: () => t0,
+      );
+      final recent = await begin(t0.add(const Duration(minutes: 5)));
+
+      final later = await begin(
+        t0.add(
+          SmartFhirClient.redirectLoginLifetime + const Duration(minutes: 1),
+        ),
+      );
+
+      expect(store.read(SmartFhirClient.redirectTabKey(abandoned)), isNull);
+      expect(store.read(SmartFhirClient.redirectTabKey(finished)), isNotNull);
+      expect(store.read(SmartFhirClient.redirectTabKey(recent)), isNotNull);
+      expect(store.read(SmartFhirClient.redirectTabKey(later)), isNotNull);
+    });
+  });
+}
+
+/// An audit logger whose success entry fails, so the login fails after the
+/// tokens have been stored.
+class _FailingAuditLogger extends AuditLogger {
+  @override
+  Future<void> logAuthenticationSuccess({
+    required String userId,
+    String? ipAddress,
+    Map<String, dynamic>? details,
+  }) async => throw StateError('audit store unavailable');
 }

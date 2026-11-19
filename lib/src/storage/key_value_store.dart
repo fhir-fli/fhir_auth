@@ -8,6 +8,9 @@ library;
 /// `window.sessionStorage` (see `currentBrowserWindow`); in tests and on
 /// other platforms it is a [MemoryKeyValueStore].
 abstract class KeyValueStore {
+  /// Every key currently stored.
+  Iterable<String> get keys;
+
   /// The value stored under [key], or null when there is none.
   String? read(String key);
 
@@ -22,8 +25,8 @@ abstract class KeyValueStore {
 class MemoryKeyValueStore implements KeyValueStore {
   final Map<String, String> _values = <String, String>{};
 
-  /// Every key currently stored, for tests that check what was left behind.
-  Iterable<String> get keys => _values.keys;
+  @override
+  Iterable<String> get keys => List<String>.of(_values.keys);
 
   @override
   String? read(String key) => _values[key];
