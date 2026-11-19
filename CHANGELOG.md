@@ -1,5 +1,25 @@
 # fhir_auth
 
+## Unreleased
+
+- Same-window SMART login for web apps embedded in an EHR, where a popup or
+  new tab is not allowed: `SmartFhirClient.beginRedirectLogin` and
+  `SmartFhirClient.completeRedirectLogin`. Each tab's login and tokens are
+  kept in session storage under the login's `state`, which stays in the
+  address as the tab's id (`TabTokenStorage`, `KeyValueStore`,
+  `RedirectTabRecord`). `currentBrowserWindow()` gives the browser's address,
+  navigation and session storage in a web build.
+- An EHR launch now requests the `launch` scope, as SMART App Launch STU2.2
+  requires ("the app adds a `launch` scope and a `launch={launch id}` URL
+  parameter").
+- `OAuthFlow.pendingSecrets` / `resumeAuthorization` and
+  `PkceManager.restore` carry a login's state, nonce and code verifier
+  across a page load.
+- Breaking: `CustomWebAuthenticator` is removed. It was never implemented
+  (`authenticate` always threw `UnimplementedError`), and nothing in the
+  fhir-fli tree used it.
+- New dependency: `web`.
+
 ## [0.13.0]
 
 - Revived as the one authentication package for every FHIR version. The code

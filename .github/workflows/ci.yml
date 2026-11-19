@@ -36,6 +36,12 @@ jobs:
               done
               flutter analyze || exit 1
               if [ -d test ]; then flutter test || exit 1; fi
+              # Code that only runs in a browser (the same-window login's
+              # window and session storage) is tested in Chrome, which the
+              # ubuntu runner image ships.
+              if [ -d test/web ]; then
+                flutter test --platform chrome test/web || exit 1
+              fi
             ); then
               failed="${failed} ${d}"
               echo "::error::${d} failed"

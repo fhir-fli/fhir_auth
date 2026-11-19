@@ -341,6 +341,14 @@ class SmartConfig extends AuthConfig {
       scopeSet.add('launch/patient');
     }
 
+    // An EHR launch asks for the context the EHR already has. SMART App
+    // Launch STU2.2 (app-launch.html, "Obtain authorization code", read
+    // 2026-11-19): "If the app was launched from an EHR, the app adds a
+    // `launch` scope and a `launch={launch id}` URL parameter".
+    if (isEhrLaunch) {
+      scopeSet.add('launch');
+    }
+
     return scopeSet.toList();
   }
 

@@ -1,3 +1,6 @@
 export 'authenticator.dart';
+export 'browser_window.dart';
+export 'browser_window_stub.dart'
+    if (dart.library.js_interop) 'browser_window_web.dart';
 export 'mobile_authenticator.dart';
 export 'web_authenticator.dart';
