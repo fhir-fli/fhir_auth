@@ -27,6 +27,13 @@ jobs:
               # or analyze failure passed (found 2026-10-04). Each step exits.
               cd "$d" || exit 1
               flutter pub get || exit 1
+              # Example apps are their own packages; analyze needs them
+              # resolved too.
+              for e in example/*/pubspec.yaml; do
+                if [ -f "$e" ]; then
+                  (cd "$(dirname "$e")" && flutter pub get) || exit 1
+                fi
+              done
               # The package's own directories only: platform folders hold
               # third-party Dart the formatter must not judge.
               for f in lib test example bin tool; do
