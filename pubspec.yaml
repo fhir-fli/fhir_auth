@@ -1,6 +1,6 @@
 name: fhir_auth
 description: Secure authentication and authorization for FHIR applications implementing SMART on FHIR (OAuth 2.0, PKCE, JWT, backend services), for every FHIR version.
-version: 0.13.0
+version: 0.14.0
 homepage: https://www.fhirfli.dev/
 repository: https://github.com/fhir-fli/fhir_auth
 issue_tracker: https://github.com/fhir-fli/fhir_auth/issues
