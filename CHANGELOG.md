@@ -1,6 +1,6 @@
 # fhir_auth
 
-## Unreleased
+## [0.14.0]
 
 - Same-window SMART login for web apps embedded in an EHR, where a popup or
   new tab is not allowed: `SmartFhirClient.beginRedirectLogin` and
