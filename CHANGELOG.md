@@ -19,6 +19,8 @@
   (`authenticate` always threw `UnimplementedError`), and nothing in the
   fhir-fli tree used it.
 - New dependency: `web`.
+- `example/ehr_redirect_launch`: a web app that signs in with the
+  same-window login, from an EHR launch or a standalone launch.
 
 ## [0.13.0]
 

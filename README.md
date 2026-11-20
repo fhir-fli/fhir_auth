@@ -120,6 +120,11 @@ session storage apart per tab). Only public clients are allowed. A `state`
 this browser session did not start, or one older than ten minutes, is refused,
 and a code is exchanged once.
 
+`example/ehr_redirect_launch` is a runnable web app built on these two calls.
+On 2026-11-19 it signed in to Epic's public sandbox (standalone launch,
+clinician user `FHIRTWO`) with PKCE S256 and an OpenID nonce, got a patient in
+context, and read that `Patient`.
+
 ## Common Use Cases
 
 ### Token Refresh
