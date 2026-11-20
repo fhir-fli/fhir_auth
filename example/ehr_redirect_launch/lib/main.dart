@@ -13,7 +13,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:fhir_auth/fhir_auth.dart';
-import 'package:flutter/material.dart';
+// Widgets only, no Material: the page is a column of text.
+import 'package:flutter/widgets.dart';
 
 /// The app's client ID, from `--dart-define=CLIENT_ID=...`.
 const String clientId = String.fromEnvironment('CLIENT_ID');
@@ -24,7 +25,9 @@ const Set<String> allowedIssuers = {
   'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4',
 };
 
-void main() => runApp(const MaterialApp(home: LaunchPage()));
+void main() => runApp(
+  const Directionality(textDirection: TextDirection.ltr, child: LaunchPage()),
+);
 
 class LaunchPage extends StatefulWidget {
   const LaunchPage({super.key});
@@ -133,10 +136,14 @@ class _LaunchPageState extends State<LaunchPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: ListView(
+  Widget build(BuildContext context) => ColoredBox(
+    color: const Color(0xFFFFFFFF),
+    child: ListView(
       padding: const EdgeInsets.all(16),
-      children: [for (final line in _lines) SelectableText(line)],
+      children: [
+        for (final line in _lines)
+          Text(line, style: const TextStyle(color: Color(0xFF000000))),
+      ],
     ),
   );
 }
