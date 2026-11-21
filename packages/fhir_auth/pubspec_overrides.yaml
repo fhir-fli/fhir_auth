@@ -1,0 +1,5 @@
+# Until fhir_auth_core 0.15.0 is on pub.dev, and for working on both
+# packages at once: use the core next door.
+dependency_overrides:
+  fhir_auth_core:
+    path: ../fhir_auth_core

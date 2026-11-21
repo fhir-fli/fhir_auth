@@ -1,0 +1,49 @@
+/// `currentBrowserWindow()` in a web build, over `package:web`.
+library;
+
+import 'package:fhir_auth_core/fhir_auth_core.dart'
+    show BrowserWindow, KeyValueStore;
+import 'package:web/web.dart' as web;
+
+/// The window the app runs in.
+BrowserWindow currentBrowserWindow() => const _WebBrowserWindow();
+
+class _WebBrowserWindow implements BrowserWindow {
+  const _WebBrowserWindow();
+
+  @override
+  Uri get location => Uri.parse(web.window.location.href);
+
+  @override
+  void assign(Uri url) => web.window.location.assign(url.toString());
+
+  @override
+  void replaceUrl(Uri url) =>
+      web.window.history.replaceState(null, '', url.toString());
+
+  @override
+  KeyValueStore get sessionStorage => const _SessionStorage();
+}
+
+class _SessionStorage implements KeyValueStore {
+  const _SessionStorage();
+
+  @override
+  Iterable<String> get keys {
+    final storage = web.window.sessionStorage;
+    return [
+      for (var i = 0; i < storage.length; i++)
+        if (storage.key(i) case final key?) key,
+    ];
+  }
+
+  @override
+  String? read(String key) => web.window.sessionStorage.getItem(key);
+
+  @override
+  void write(String key, String value) =>
+      web.window.sessionStorage.setItem(key, value);
+
+  @override
+  void remove(String key) => web.window.sessionStorage.removeItem(key);
+}

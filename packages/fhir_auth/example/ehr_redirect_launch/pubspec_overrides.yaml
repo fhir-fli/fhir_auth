@@ -1,0 +1,4 @@
+# Until fhir_auth_core 0.15.0 is on pub.dev: use the core in this repo.
+dependency_overrides:
+  fhir_auth_core:
+    path: ../../../fhir_auth_core

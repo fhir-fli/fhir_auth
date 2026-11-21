@@ -1,0 +1,15 @@
+name: ehr_redirect_launch
+description: SMART EHR launch with a same-window redirect, for apps shown inside the EHR's own window.
+publish_to: none
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  fhir_auth:
+    path: ../..
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  very_good_analysis: ^10.0.0
