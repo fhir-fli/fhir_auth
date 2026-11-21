@@ -55,3 +55,6 @@ jobs:
           dart format --output=none --set-exit-if-changed lib test example || exit 1
           flutter analyze || exit 1
           flutter test || exit 1
+
+  dependencies:
+    uses: fhir-fli/.github/.github/workflows/dependencies.yml@main
